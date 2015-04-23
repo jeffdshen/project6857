@@ -132,6 +132,9 @@ public class Board {
         }
         Location loc = new Location(x, y);
         Move result = makeMove(loc, direction);
+        if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getType() == PieceType.UNKNOWN){
+            return false;
+        }
         if (result == null){
             return false;
         }
@@ -153,6 +156,9 @@ public class Board {
         }
         Location loc = new Location(x, y);
         Move result = makeMove(loc, direction);
+        if (getPiece(result.getStart()).getType() != PieceType.UNKNOWN){
+            return false;
+        }
         if (result == null){
             return false;
         }

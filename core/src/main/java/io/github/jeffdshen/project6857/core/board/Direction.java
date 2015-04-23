@@ -25,14 +25,11 @@ public enum Direction {
     }
 
     public Direction getOpposite(){
-        if (this.equals(FORWARD)){
-            return BACKWARD;
-        } else if (this.equals(BACKWARD)){
-            return FORWARD;
-        } else if (this.equals(RIGHT)){
-            return LEFT;
-        } else if (this.equals(LEFT)){
-            return RIGHT;
+        switch(this){
+            case FORWARD: return BACKWARD;
+            case BACKWARD: return FORWARD;
+            case RIGHT: return LEFT;
+            case LEFT: return RIGHT;
         }
         return null;
     }
