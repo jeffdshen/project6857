@@ -1,0 +1,40 @@
+0 input		//output$input.bob.rank$0
+1 input		//output$input.bob.rank$1
+2 input		//output$input.bob.rank$2
+3 input		//output$input.bob.rank$3
+4 input		//output$input.bob.piece$0
+5 input		//output$input.bob.piece$1
+6 input		//output$input.bob.piece$2
+7 input		//output$input.alice.rank$0
+8 input		//output$input.alice.rank$1
+9 input		//output$input.alice.rank$2
+10 input		//output$input.alice.rank$3
+11 input		//output$input.alice.piece$0
+12 input		//output$input.alice.piece$1
+13 input		//output$input.alice.piece$2
+14 gate arity 2 table [ 1 0 0 0 ] inputs [ 7 8 ]
+15 gate arity 2 table [ 0 1 1 0 ] inputs [ 7 8 ]
+16 gate arity 2 table [ 0 1 0 0 ] inputs [ 14 9 ]
+17 gate arity 2 table [ 1 0 0 1 ] inputs [ 14 9 ]
+18 gate arity 2 table [ 1 0 0 1 ] inputs [ 16 10 ]
+19 gate arity 2 table [ 0 0 0 1 ] inputs [ 7 0 ]
+20 gate arity 3 table [ 0 0 0 1 0 1 1 1 ] inputs [ 19 15 1 ]
+21 gate arity 3 table [ 0 0 0 1 0 1 1 1 ] inputs [ 20 17 2 ]
+22 gate arity 2 table [ 0 1 1 0 ] inputs [ 18 3 ]
+23 gate arity 2 table [ 0 1 1 0 ] inputs [ 21 22 ]
+24 gate arity 2 table [ 1 0 0 0 ] inputs [ 0 1 ]
+25 gate arity 2 table [ 0 1 1 0 ] inputs [ 0 1 ]
+26 gate arity 2 table [ 0 1 0 0 ] inputs [ 24 2 ]
+27 gate arity 2 table [ 1 0 0 1 ] inputs [ 24 2 ]
+28 gate arity 2 table [ 1 0 0 1 ] inputs [ 26 3 ]
+29 gate arity 2 table [ 0 0 0 1 ] inputs [ 0 7 ]
+30 gate arity 3 table [ 0 0 0 1 0 1 1 1 ] inputs [ 29 25 8 ]
+31 gate arity 3 table [ 0 0 0 1 0 1 1 1 ] inputs [ 30 27 9 ]
+32 gate arity 2 table [ 0 1 1 0 ] inputs [ 28 10 ]
+33 gate arity 2 table [ 0 1 1 0 ] inputs [ 31 32 ]
+34 gate arity 2 table [ 0 1 0 0 ] inputs [ 33 23 ]
+35 gate arity 2 table [ 0 1 1 1 ] inputs [ 33 23 ]
+36 output gate arity 1 table [ 0 1 ] inputs [ 35 ]	//output$output.alice$0
+37 output gate arity 1 table [ 0 1 ] inputs [ 34 ]	//output$output.alice$1
+38 output gate arity 1 table [ 0 1 ] inputs [ 35 ]	//output$output.bob$0
+39 output gate arity 2 table [ 0 1 1 0 ] inputs [ 35 34 ]	//output$output.bob$1

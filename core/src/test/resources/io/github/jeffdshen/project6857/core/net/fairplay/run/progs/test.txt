@@ -1,0 +1,30 @@
+/*
+ * Compare two pieces and see who wins
+ */
+program Test {
+    type int = Int<4>; // 4-bit integer
+    type PieceType = enum { ROCK, PAPER, SCISSORS, FLAG };
+
+	type AliceInput = struct { PieceType piece, int rank };
+	type BobInput = struct { PieceType piece, int rank };
+	type AliceOutput = Int<2>;
+	type BobOutput = Int<2>;
+	type Output = struct {AliceOutput alice,
+            BobOutput bob};
+	type Input = struct {AliceInput alice,
+            BobInput bob};
+
+	function Output output(Input input) {
+        var Int<2> alice;
+        if (input.alice.rank > input.bob.rank) {
+            alice = 1;
+        } else if (input.alice.rank < input.bob.rank) {
+            alice = -1;
+        } else {
+            alice = 0;
+        }
+
+        output.alice = alice;
+        output.bob = -alice;
+	}
+}
