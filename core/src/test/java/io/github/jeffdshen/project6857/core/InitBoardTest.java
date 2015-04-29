@@ -37,7 +37,7 @@ public class InitBoardTest {
         assertEquals(board.getPiece(0, 0), new Piece(PieceType.FLAG, Rank.FLAG));
         assertEquals(board.setPiece(1, 1, new Piece(PieceType.FLAG, Rank.FLAG)), false);
         assertEquals(board.setPiece(0, 0, new Piece(PieceType.ROCK, Rank.ONE)), false);
-        assert(board.setPiece(1, 1, new Piece(PieceType.ROCK, Rank.ONE)));
+        assertTrue(board.setPiece(1, 1, new Piece(PieceType.ROCK, Rank.ONE)));
         assertEquals(board.setPiece(5, 5, new Piece(PieceType.ROCK, Rank.TWO)), false);
     }
 
@@ -48,7 +48,7 @@ public class InitBoardTest {
         assertEquals(board.removePiece(10, 10), false);
         assertEquals(board.removePiece(3, 3), false);
         board.setPiece(3, 3, new Piece(PieceType.PAPER, Rank.ONE));
-        assert(board.removePiece(3, 3));
+        assertTrue(board.removePiece(3, 3));
         assertEquals(board.getPiece(3, 3), null);
     }
 
@@ -62,21 +62,17 @@ public class InitBoardTest {
                 correct = false;
             }
         }
-        assert(correct);
+        assertTrue(correct);
     }
 
     @Test
     public void getBoard(){
         InitBoard board = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
-        boolean correct = true;
         Piece[][] getBoard = board.getBoard();
         for (int i = 0; i < getBoard.length; i ++){
             for (int j = 0; j < getBoard[i].length; j ++){
-                if (!getBoard[i][j].equals(board.getPiece(j, i))){
-                    correct = false;
-                }
+                assertEquals(getBoard[i][j], board.getPiece(j, i));
             }
         }
-        assert(correct);
     }
 }

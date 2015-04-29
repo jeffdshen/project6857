@@ -188,10 +188,10 @@ public class Board {
         if (result == null){
             return false;
         }
-        if (getPiece(result.getStart()).getType() != PieceType.UNKNOWN){
+        if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getType() != PieceType.UNKNOWN){
             return false;
         }
-        else if (getPiece(result.getEnd()).getType().equals(PieceType.UNKNOWN)){
+        else if (getPiece(result.getEnd()) != null && getPiece(result.getEnd()).getType() == PieceType.UNKNOWN){
             // Cannot move onto your own piece
             return false;
         }
