@@ -21,19 +21,32 @@ public class BoardTest {
     public void moveTest(){
         InitBoard initBoard = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
         initBoard.setPiece(0, 3, new Piece(PieceType.PAPER, Rank.FIVE));
+        initBoard.setPiece(5, 3, new Piece(PieceType.PAPER, Rank.FOUR));
+        initBoard.setPiece(4, 3, new Piece(PieceType.PAPER, Rank.FOUR));
         Board board = new Board(initBoard.getBoard());
 
         // Moves correctly
         assertTrue(board.makeMyMove(0, 3, Direction.FORWARD));
-        assertTrue(board.makeTheirMove(1, 6, Direction.BACKWARD));
+        assertTrue(board.makeTheirMove(0, 6, Direction.BACKWARD));
         assertTrue(board.startRound());
-        assertEquals(board.getPiece(0, 3), null);
-        assertEquals(board.getPiece(1, 6), null);
+        assertNull(board.getPiece(0, 3));
+        assertNull(board.getPiece(0, 6));
         assertEquals(board.getPiece(0, 4), new Piece(PieceType.PAPER, Rank.FIVE));
-        assertEquals(board.getPiece(1, 5), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
+        assertEquals(board.getPiece(0, 5), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
 
         // Cannot move other player's pieces
-        assertEquals(board.makeMyMove(0, 6, Direction.BACKWARD), false);
-        assertEquals(board.makeTheirMove(0, 1, Direction.RIGHT), false);
+        assertFalse(board.makeMyMove(5, 6, Direction.BACKWARD));
+        assertFalse(board.makeTheirMove(5, 3, Direction.FORWARD));
+
+        // Cannot move onto your own piece
+        assertFalse(board.makeMyMove(4, 3, Direction.RIGHT));
+        assertFalse(board.makeTheirMove(4, 6, Direction.LEFT));
+
+        // If two pieces move onto each others' square, no conflicts
+        assertTrue(board.makeMyMove(0, 4, Direction.FORWARD));
+        assertTrue(board.makeTheirMove(0, 5, Direction.BACKWARD));
+        assertTrue(board.startRound());
+        assertEquals(board.getPiece(0, 5), new Piece(PieceType.PAPER, Rank.FIVE));
+        assertEquals(board.getPiece(0, 4), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
     }
 }
