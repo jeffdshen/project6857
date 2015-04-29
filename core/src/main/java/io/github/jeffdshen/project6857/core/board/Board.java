@@ -116,6 +116,8 @@ public class Board {
         // Sets the end location based on the comparison results
         Piece myPiece = getPiece(myMove.getStart());
         Piece theirPiece = getPiece(theirMove.getStart());
+        setPiece(myMove.getStart(), null);
+        setPiece(theirMove.getStart(), null);
         if (myStatus.equals(Compare.WIN)){
             setPiece(myMove.getEnd(), myPiece);
         } else if (myStatus.equals(Compare.TIE)){
@@ -125,14 +127,6 @@ public class Board {
             setPiece(theirMove.getEnd(), theirPiece);
         } else if (theirStatus.equals(Compare.TIE)){
             setPiece(theirMove.getEnd(), null);
-        }
-
-        // Removes the piece at the starting location if it hasn't already been replaced
-        if (myMove.getStart() != null && getPiece(myMove.getStart()).equals(myPiece)){
-            setPiece(myMove.getStart(), null);
-        }
-        if (theirMove.getStart() != null && getPiece(theirMove.getStart()).equals(theirPiece)){
-            setPiece(theirMove.getStart(), null);
         }
 
         // Adds the round to a arraylist
