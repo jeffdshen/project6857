@@ -1,5 +1,9 @@
 package io.github.jeffdshen.project6857.core.board;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Created by chenp on 4/18/2015.
  */
@@ -7,6 +11,7 @@ public class Board {
     private Piece[][] board;
     private Move myMove;
     private Move theirMove;
+    private List<Round> rounds;
     private int width;
     private int height;
 
@@ -14,6 +19,7 @@ public class Board {
         this.board = board;
         height = board.length;
         width = board[0].length;
+        rounds = new ArrayList<Round>();
     }
 
     public synchronized Piece[][] getBoard(){
@@ -62,39 +68,62 @@ public class Board {
             return false;
         }
 
+        Compare myStatus;
+        Compare theirStatus;
+
         if (myMove.getEnd().equals(theirMove.getEnd())){
             Compare result = runFairPlay(myMove.getStart(), theirMove.getStart());
             if (result.equals(Compare.WIN)){
                 setPiece(myMove.getEnd(), getPiece(myMove.getStart()));
+                myStatus = Compare.WIN;
+                theirStatus = Compare.LOSS;
             } else if (result.equals(Compare.LOSS)){
                 setPiece(myMove.getEnd(), getPiece(theirMove.getStart()));
+                myStatus = Compare.LOSS;
+                theirStatus = Compare.WIN;
+            } else {
+                myStatus = Compare.TIE;
+                theirStatus = Compare.TIE;
             }
         } else {
             if (getPiece(myMove.getEnd()) == null){
                 setPiece(myMove.getEnd(), getPiece(myMove.getStart()));
+                myStatus = Compare.WIN;
             } else {
                 Compare result = runFairPlay(myMove.getStart(), myMove.getEnd());
                 if (result.equals(Compare.WIN)){
                     setPiece(myMove.getEnd(), getPiece(myMove.getStart()));
+                    myStatus = Compare.WIN;
                 } else if (result.equals(Compare.TIE)){
                     setPiece(myMove.getEnd(), null);
+                    myStatus = Compare.TIE;
+                } else {
+                    myStatus = Compare.LOSS;
                 }
             }
 
             if (getPiece(theirMove.getEnd()) == null){
                 setPiece(theirMove.getEnd(), getPiece(theirMove.getStart()));
+                theirStatus = Compare.WIN;
             } else {
                 Compare result = runFairPlay(theirMove.getEnd(), theirMove.getStart());
                 if (result.equals(Compare.LOSS)){
+                    theirStatus = Compare.WIN;
                     setPiece(theirMove.getEnd(), getPiece(theirMove.getStart()));
                 } else if (result.equals(Compare.TIE)){
+                    theirStatus = Compare.TIE;
                     setPiece(theirMove.getEnd(), null);
+                } else {
+                    theirStatus = Compare.LOSS;
                 }
             }
         }
 
         setPiece(myMove.getStart(), null);
         setPiece(theirMove.getStart(), null);
+
+        rounds.add(new Round(myMove, myStatus, theirMove, theirStatus));
+
         myMove = null;
         theirMove = null;
         return true;
@@ -132,10 +161,10 @@ public class Board {
         }
         Location loc = new Location(x, y);
         Move result = makeMove(loc, direction);
-        if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getType() == PieceType.UNKNOWN){
+        if (result == null){
             return false;
         }
-        if (result == null){
+        if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getType() == PieceType.UNKNOWN){
             return false;
         }
         else if (getPiece(result.getEnd()) != null && getPiece(result.getEnd()).getType() != PieceType.UNKNOWN){
@@ -156,10 +185,10 @@ public class Board {
         }
         Location loc = new Location(x, y);
         Move result = makeMove(loc, direction);
-        if (getPiece(result.getStart()).getType() != PieceType.UNKNOWN){
+        if (result == null){
             return false;
         }
-        if (result == null){
+        if (getPiece(result.getStart()).getType() != PieceType.UNKNOWN){
             return false;
         }
         else if (getPiece(result.getEnd()).getType().equals(PieceType.UNKNOWN)){
@@ -168,6 +197,10 @@ public class Board {
         }
         theirMove = result;
         return true;
+    }
+
+    public List<Round> getRounds(){
+        return Collections.unmodifiableList(rounds);
     }
 
     public Move getMyMove(){
