@@ -1,7 +1,5 @@
 package io.github.jeffdshen.project6857.core.board;
 
-import com.badlogic.gdx.utils.Array;
-
 /**
  * Created by chenp on 4/18/2015.
  */
@@ -23,7 +21,7 @@ public class Piece {
     }
 
     public boolean canMove() {
-        return this.rank != Rank.BOMB && this.rank != Rank.FLAG && this.rank != Rank.UNKOWN;
+        return this.rank != Rank.BOMB && this.rank != Rank.FLAG && this.rank != Rank.UNKNOWN;
     }
 
     public boolean equals(Object other){

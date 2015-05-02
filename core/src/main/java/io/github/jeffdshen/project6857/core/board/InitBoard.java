@@ -35,7 +35,7 @@ public class InitBoard {
 
         for (int i = 0; i < width; i ++) {
             for (int j = height - playerHeight; j < height; j++) {
-                board[j][i] = new Piece(PieceType.UNKNOWN, Rank.UNKOWN);
+                board[j][i] = new Piece(PieceType.UNKNOWN, Rank.UNKNOWN);
             }
         }
 
@@ -95,6 +95,15 @@ public class InitBoard {
             result.put(p, remainingPieces.get(p));
         }
         return result;
+    }
+
+    public boolean noRemainingPieces() {
+        for (Piece p: remainingPieces.keySet()) {
+            if (remainingPieces.get(p) != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public Piece[][] getBoard(){
