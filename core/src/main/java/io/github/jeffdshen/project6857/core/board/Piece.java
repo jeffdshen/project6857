@@ -21,7 +21,7 @@ public class Piece {
     }
 
     public boolean canMove() {
-        return this.rank != Rank.BOMB && this.rank != Rank.FLAG && this.rank != Rank.UNKNOWN;
+        return this.rank != Rank.BOMB && this.rank != Rank.FLAG;
     }
 
     public boolean equals(Object other){

@@ -23,4 +23,12 @@ public class Round {
     public Move getTheirMove() {
         return theirMove;
     }
+
+    public Compare getMyStatus() {
+        return myStatus;
+    }
+
+    public Compare getTheirStatus() {
+        return theirStatus;
+    }
 }

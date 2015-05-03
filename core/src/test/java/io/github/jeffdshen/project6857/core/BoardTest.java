@@ -12,29 +12,41 @@ public class BoardTest {
     @Test
     public void initializeBoardTest(){
         InitBoard initBoard = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
-        initBoard.setPiece(0, 5, new Piece(PieceType.PAPER, Rank.FIVE));
+        initBoard.setPiece(0, 3, new Piece(PieceType.PAPER, Rank.FIVE));
         Board board = new Board(initBoard.getBoard());
-        assertEquals(board.getPiece(0, 5), new Piece(PieceType.PAPER, Rank.FIVE));
+        assertEquals(board.getPiece(0, 3), new Piece(PieceType.PAPER, Rank.FIVE));
     }
 
     @Test
     public void moveTest(){
         InitBoard initBoard = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
-        initBoard.setPiece(0, 5, new Piece(PieceType.PAPER, Rank.FIVE));
+        initBoard.setPiece(0, 3, new Piece(PieceType.PAPER, Rank.FIVE));
+        initBoard.setPiece(5, 3, new Piece(PieceType.PAPER, Rank.FOUR));
+        initBoard.setPiece(4, 3, new Piece(PieceType.PAPER, Rank.FOUR));
         Board board = new Board(initBoard.getBoard());
 
         // Moves correctly
-        board.makeMyMove(0, 5, Direction.RIGHT);
-        board.makeTheirMove(8, 6, Direction.BACKWARD);
-        board.startRound();
-        assertEquals(board.getPiece(0, 5), null);
-        assertEquals(board.getPiece(8, 6), null);
-        assertEquals(board.getPiece(1, 5), new Piece(PieceType.PAPER, Rank.FIVE));
-        assertEquals(board.getPiece(8, 5), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
+        assertTrue(board.makeMyMove(0, 3, Direction.FORWARD));
+        assertTrue(board.makeTheirMove(0, 6, Direction.BACKWARD));
+        assertTrue(board.startRound());
+        assertNull(board.getPiece(0, 3));
+        assertNull(board.getPiece(0, 6));
+        assertEquals(board.getPiece(0, 4), new Piece(PieceType.PAPER, Rank.FIVE));
+        assertEquals(board.getPiece(0, 5), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
 
-        // Cannot move other player's pieces or move onto your own pieces
-        assertEquals(board.makeMyMove(5, 6, Direction.BACKWARD), false);
-        assertEquals(board.makeTheirMove(5, 6, Direction.RIGHT), false);
-        assertEquals(board.makeTheirMove(1, 5, Direction.BACKWARD), false);
+        // Cannot move other player's pieces
+        assertFalse(board.makeMyMove(5, 6, Direction.BACKWARD));
+        assertFalse(board.makeTheirMove(5, 3, Direction.FORWARD));
+
+        // Cannot move onto your own piece
+        assertFalse(board.makeMyMove(4, 3, Direction.RIGHT));
+        assertFalse(board.makeTheirMove(4, 6, Direction.LEFT));
+
+        // If two pieces move onto each others' square, no conflicts
+        assertTrue(board.makeMyMove(0, 4, Direction.FORWARD));
+        assertTrue(board.makeTheirMove(0, 5, Direction.BACKWARD));
+        assertTrue(board.startRound());
+        assertEquals(board.getPiece(0, 5), new Piece(PieceType.PAPER, Rank.FIVE));
+        assertEquals(board.getPiece(0, 4), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
     }
 }

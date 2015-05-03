@@ -26,7 +26,7 @@ public class Location {
         }
 
         Location that = (Location)other;
-        return this.x == that.y && this.y == that.y;
+        return this.x == that.x && this.y == that.y;
     }
 
     public int hashCode(){

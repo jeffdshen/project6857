@@ -51,17 +51,17 @@ public class InitBoard {
     }
 
     public Piece getPiece(int x, int y){
-        if (!inBoard(x, y)){
+        if (!inBoard(x, y) || this.board[y][x] == null){
             return null;
         }
-        return board[y][x];
+        return new Piece(this.board[y][x].getType(), this.board[y][x].getRank());
     }
 
     public boolean setPiece(int x, int y, Piece piece){
         if (!inPlayerArea(x, y)){
             return false;
         }
-        if (board[y][x] != null){
+        if (getPiece(x, y) != null){
             return false;
         }
         if (!remainingPieces.containsKey(piece)){
@@ -80,10 +80,10 @@ public class InitBoard {
         if (!inPlayerArea(x, y)){
             return false;
         }
-        if (board[y][x] == null){
+        if (getPiece(x, y) == null){
             return false;
         }
-        Piece p = board[y][x];
+        Piece p = getPiece(x, y);
         remainingPieces.put(p, remainingPieces.get(p) + 1);
         board[y][x] = null;
         return true;
@@ -110,7 +110,7 @@ public class InitBoard {
         Piece[][] result = new Piece[height][width];
         for (int i = 0; i < width; i ++) {
             for (int j = 0; j < height; j++) {
-                result[j][i] = board[j][i];
+                result[j][i] = getPiece(i, j);
             }
         }
         return result;
