@@ -71,7 +71,6 @@ public class GameMain implements ApplicationListener {
 	public void create () {
         dragDrop = new DragAndDrop();
         batch = new SpriteBatch();
-        font = new BitmapFont(Gdx.files.internal("courier-new.fnt"));
 
         stage = new Stage(new FitViewport(stageWidth, stageHeight));
         Gdx.input.setInputProcessor(stage);
