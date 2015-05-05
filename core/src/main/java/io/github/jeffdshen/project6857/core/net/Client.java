@@ -1,4 +1,4 @@
-package io.github.jeffdshen.project6857.core;
+package io.github.jeffdshen.project6857.core.net;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,5 +1,7 @@
-package io.github.jeffdshen.project6857.core;
+package io.github.jeffdshen.project6857.core.net;
 
+import io.github.jeffdshen.project6857.core.net.Client;
+import io.github.jeffdshen.project6857.core.net.Server;
 import org.testng.annotations.Test;
 
 import java.io.BufferedReader;
