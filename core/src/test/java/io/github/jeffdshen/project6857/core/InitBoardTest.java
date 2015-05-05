@@ -1,6 +1,5 @@
 package io.github.jeffdshen.project6857.core;
 
-import com.sun.org.apache.xml.internal.security.Init;
 import io.github.jeffdshen.project6857.core.board.*;
 import org.testng.annotations.Test;
 
@@ -15,7 +14,7 @@ public class InitBoardTest {
     @Test
     public void testGet(){
         InitBoard board = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
-        assertEquals(board.getPiece(6, 6), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
+        assertEquals(board.getPiece(6, 6), new Piece(PieceType.UNKNOWN, Rank.UNKNOWN));
         assertNull(board.getPiece(0, 0));
         assertNull(board.getPiece(11, 11));
 

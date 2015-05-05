@@ -32,7 +32,7 @@ public class BoardTest {
         assertNull(board.getPiece(0, 3));
         assertNull(board.getPiece(0, 6));
         assertEquals(board.getPiece(0, 4), new Piece(PieceType.PAPER, Rank.FIVE));
-        assertEquals(board.getPiece(0, 5), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
+        assertEquals(board.getPiece(0, 5), new Piece(PieceType.UNKNOWN, Rank.UNKNOWN));
 
         // Cannot move other player's pieces
         assertFalse(board.makeMyMove(5, 6, Direction.BACKWARD));
@@ -47,6 +47,6 @@ public class BoardTest {
         assertTrue(board.makeTheirMove(0, 5, Direction.BACKWARD));
         assertTrue(board.startRound());
         assertEquals(board.getPiece(0, 5), new Piece(PieceType.PAPER, Rank.FIVE));
-        assertEquals(board.getPiece(0, 4), new Piece(PieceType.UNKNOWN, Rank.UNKOWN));
+        assertEquals(board.getPiece(0, 4), new Piece(PieceType.UNKNOWN, Rank.UNKNOWN));
     }
 }
