@@ -10,31 +10,17 @@ import java.net.UnknownHostException;
 /**
  * Created by chenp on 5/5/2015.
  */
-public class Client implements Runnable {
+public class Client {
     private String ip;
     private int port;
-    public PrintWriter out;
-    public BufferedReader in;
+    public Socket socket;
 
     public Client(String ip, int port){
         this.ip = ip;
         this.port = port;
     }
 
-    @Override
-    public void run() {
-        try{
-            Socket socket = new Socket(ip, port);
-            out = new PrintWriter(socket.getOutputStream(),
-                    true);
-            in = new BufferedReader(new InputStreamReader(
-                    socket.getInputStream()));
-        } catch (UnknownHostException e) {
-            System.out.println("Unknown host: " + ip);
-            System.exit(1);
-        } catch  (IOException e) {
-            System.out.println("No I/O");
-            System.exit(1);
-        }
+    public void connect() throws IOException {
+        socket = new Socket(ip, port);
     }
 }
