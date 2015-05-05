@@ -10,11 +10,19 @@ import java.net.UnknownHostException;
 /**
  * Created by chenp on 5/5/2015.
  */
-public class Client {
+public class Client implements Runnable {
+    private String ip;
+    private int port;
     public PrintWriter out;
     public BufferedReader in;
 
     public Client(String ip, int port){
+        this.ip = ip;
+        this.port = port;
+    }
+
+    @Override
+    public void run() {
         try{
             Socket socket = new Socket(ip, port);
             out = new PrintWriter(socket.getOutputStream(),

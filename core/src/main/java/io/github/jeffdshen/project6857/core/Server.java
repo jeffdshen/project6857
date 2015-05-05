@@ -1,5 +1,8 @@
 package io.github.jeffdshen.project6857.core;
 
+import io.github.jeffdshen.project6857.core.board.Direction;
+import io.github.jeffdshen.project6857.core.board.Location;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -10,11 +13,17 @@ import java.net.Socket;
 /**
  * Created by chenp on 5/5/2015.
  */
-public class Server {
+public class Server implements Runnable {
+    private int port;
     public BufferedReader in;
     public PrintWriter out;
 
     public Server(int port){
+        this.port = port;
+    }
+
+    @Override
+    public void run() {
         ServerSocket server = null;
         try{
             server = new ServerSocket(port);
