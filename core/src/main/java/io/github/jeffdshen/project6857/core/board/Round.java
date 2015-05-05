@@ -6,10 +6,10 @@ package io.github.jeffdshen.project6857.core.board;
 public class Round {
     private final Move myMove;
     private final Move theirMove;
-    private final Compare myStatus;
-    private final Compare theirStatus;
+    private final Result myStatus;
+    private final Result theirStatus;
 
-    public Round(Move myMove, Compare myStatus, Move theirMove, Compare theirStatus){
+    public Round(Move myMove, Result myStatus, Move theirMove, Result theirStatus){
         this.myMove = myMove;
         this.theirMove = theirMove;
         this.myStatus = myStatus;
@@ -24,11 +24,11 @@ public class Round {
         return theirMove;
     }
 
-    public Compare getMyStatus() {
+    public Result getMyStatus() {
         return myStatus;
     }
 
-    public Compare getTheirStatus() {
+    public Result getTheirStatus() {
         return theirStatus;
     }
 }

@@ -19,7 +19,7 @@ public class Board {
         this.board = board;
         height = board.length;
         width = board[0].length;
-        rounds = new ArrayList<Round>();
+        rounds = new ArrayList<>();
     }
 
     public synchronized Piece[][] getBoard(){
@@ -67,49 +67,27 @@ public class Board {
         if (myMove == null || theirMove == null){
             return false;
         }
-        Compare myStatus;
-        Compare theirStatus;
+        Result myStatus;
+        Result theirStatus;
 
         if (myMove.getEnd().equals(theirMove.getEnd())){
             // Checks if the two pieces are colliding on the same square
-            Compare result = runFairPlay(myMove.getStart(), theirMove.getStart());
-            if (result.equals(Compare.WIN)){
-                myStatus = Compare.WIN;
-                theirStatus = Compare.LOSS;
-            } else if (result.equals(Compare.LOSS)){
-                myStatus = Compare.LOSS;
-                theirStatus = Compare.WIN;
-            } else {
-                myStatus = Compare.TIE;
-                theirStatus = Compare.TIE;
-            }
+            Result result = runFairPlay(myMove.getStart(), theirMove.getStart());
+            myStatus = result;
+            theirStatus = result.opposite();
         } else {
             if (getPiece(myMove.getEnd()) == null || myMove.getEnd().equals(theirMove.getStart())){
                 // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
-                myStatus = Compare.WIN;
+                myStatus = new Result(Compare.WIN, null, null);
             } else {
-                Compare result = runFairPlay(myMove.getStart(), myMove.getEnd());
-                if (result.equals(Compare.WIN)){
-                    myStatus = Compare.WIN;
-                } else if (result.equals(Compare.LOSS)){
-                    myStatus = Compare.LOSS;
-                } else {
-                    myStatus = Compare.TIE;
-                }
+                myStatus = runFairPlay(myMove.getStart(), myMove.getEnd());
             }
 
             if (getPiece(theirMove.getEnd()) == null || theirMove.getEnd().equals(myMove.getStart())){
                 // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
-                theirStatus = Compare.WIN;
+                theirStatus = new Result(Compare.WIN, null, null);
             } else {
-                Compare result = runFairPlay(theirMove.getEnd(), theirMove.getStart());
-                if (result.equals(Compare.LOSS)){
-                    theirStatus = Compare.WIN;
-                } else if (result.equals(Compare.WIN)){
-                    theirStatus = Compare.LOSS;
-                } else {
-                    theirStatus = Compare.TIE;
-                }
+                theirStatus = runFairPlay(theirMove.getEnd(), theirMove.getStart()).opposite();
             }
         }
 
@@ -118,14 +96,14 @@ public class Board {
         Piece theirPiece = getPiece(theirMove.getStart());
         setPiece(myMove.getStart(), null);
         setPiece(theirMove.getStart(), null);
-        if (myStatus.equals(Compare.WIN)){
+        if (myStatus.getCompare() == Compare.WIN){
             setPiece(myMove.getEnd(), myPiece);
-        } else if (myStatus.equals(Compare.TIE)){
+        } else if (myStatus.getCompare() == Compare.TIE){
             setPiece(myMove.getEnd(), null);
         }
-        if (theirStatus.equals(Compare.WIN)){
+        if (theirStatus.getCompare() == Compare.WIN){
             setPiece(theirMove.getEnd(), theirPiece);
-        } else if (theirStatus.equals(Compare.TIE)){
+        } else if (theirStatus.getCompare() == Compare.TIE){
             setPiece(theirMove.getEnd(), null);
         }
 
@@ -138,12 +116,12 @@ public class Board {
         return true;
     }
 
-    private Compare runFairPlay(Location loc1, Location loc2){
+    private Result runFairPlay(Location loc1, Location loc2){
         return runFairPlay(loc1.getX(), loc1.getY(), loc2.getX(), loc2.getY());
     }
 
-    private Compare runFairPlay(int myX, int myY, int theirX, int theirY){
-        return Compare.TIE; //TODO do Fairplay here to determine win
+    private Result runFairPlay(int myX, int myY, int theirX, int theirY){
+        return null; //TODO do Fairplay here to determine win
     }
 
     private Move makeMove(Location loc, Direction direction){
@@ -204,6 +182,7 @@ public class Board {
         theirMove = result;
         return true;
     }
+
 
     public List<Round> getRounds(){
         return Collections.unmodifiableList(rounds);
