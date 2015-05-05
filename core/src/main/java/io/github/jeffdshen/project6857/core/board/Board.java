@@ -1,7 +1,6 @@
 package io.github.jeffdshen.project6857.core.board;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -12,8 +11,8 @@ public class Board {
     private Move myMove;
     private Move theirMove;
     private List<Round> rounds;
-    private int width;
-    private int height;
+    private final int width;
+    private final int height;
 
     public Board(Piece[][] board){
         this.board = board;
@@ -183,12 +182,15 @@ public class Board {
         return true;
     }
 
-
-    public List<Round> getRounds(){
-        return Collections.unmodifiableList(rounds);
+    public synchronized List<Round> getRounds(){
+        return new ArrayList<>(rounds);
     }
 
-    public Move getMyMove(){
+    public synchronized Round getLastRound() {
+        return rounds.get(rounds.size() - 1);
+    }
+
+    public synchronized Move getMyMove(){
         return myMove;
     }
 }
