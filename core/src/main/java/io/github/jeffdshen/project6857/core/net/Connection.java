@@ -32,12 +32,28 @@ public class Connection implements Runnable {
                 true);
     }
 
-    private void exchangeInitBoard() {
-
+    private void exchangeInitBoard() throws IOException {
+        String s = EncodingProtocol.encodeBoard(initBoard);
+        myInitBoard = Commitment.makeCommitment(s);
+        out.println(myInitBoard.getHash());
+        String hash = in.readLine();
+        theirInitBoard = Commitment.getCommitment(hash);
     }
 
-    private void verifyGame() {
+    private void verifyGame() throws IOException, VerificationException {
+        out.println(myInitBoard.getSecret());
+        String secret = in.readLine();
+        boolean verified = theirInitBoard.update(secret);
+        if (!verified) {
+            throw new VerificationException();
+        }
 
+        Piece[][] thierInitBoard = EncodingProtocol.decodeBoard(theirInitBoard.getData());
+        // TODO MAKE A NEW BOARD
+        // remember that their view is flipped
+
+
+        // TODO REPLAY ALL MOVES
     }
 
     /**
@@ -49,11 +65,20 @@ public class Connection implements Runnable {
 
     @Override
     public void run() {
-        exchangeInitBoard();
+        try {
+            exchangeInitBoard();
 
-        while(exchangeMoves());
+            while(exchangeMoves());
 
-        verifyGame();
+            verifyGame();
+
+        } catch (IOException e) {
+            // TODO bad connection
+        } catch (RuntimeException e) {
+            // TODO bad encoding, invalid game (or possibly cheater)
+        } catch (VerificationException e) {
+            // TODO CHEATER (probably)
+        }
 
         // end
         try {

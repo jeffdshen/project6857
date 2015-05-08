@@ -6,7 +6,7 @@ import java.security.SecureRandom;
  * Created by jdshen on 5/7/15.
  */
 public class Commitment {
-    public static final int NONCE_BYTES_LENGTH = 6;
+    public static final int NONCE_BYTES_LENGTH = 16;
 
     // Our nonce is in hex
     public static final int NONCE_LENGTH = NONCE_BYTES_LENGTH * 2;
@@ -14,6 +14,8 @@ public class Commitment {
     private String nonce;
     private String data;
     private String hash;
+
+    private Commitment() {}
 
     /**
      * Updates the commitment with the secret (nonce + data) and verifies the hash.
@@ -36,6 +38,10 @@ public class Commitment {
         return false;
     }
 
+    public String getSecret() {
+        return nonce + data;
+    }
+
     public String getData() {
         return data;
     }
@@ -54,7 +60,7 @@ public class Commitment {
         c.data = data;
         byte[] bytes = new byte[NONCE_BYTES_LENGTH];
         random.nextBytes(bytes);
-        c.nonce = Encoding.bytesToHex(bytes);
+        c.nonce = EncodingProtocol.encodeBytes(bytes);
         c.hash = Sha256.hash(c.nonce + c.data);
         return c;
     }

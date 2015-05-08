@@ -13,7 +13,7 @@ public class Sha256 {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(text.getBytes("UTF-8"));
-            return Encoding.bytesToHex(hash);
+            return EncodingProtocol.encodeBytes(hash);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
