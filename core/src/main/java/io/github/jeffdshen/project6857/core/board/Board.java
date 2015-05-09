@@ -128,13 +128,13 @@ public class Board {
 
     private Result compare(Location loc1, Location loc2){
         if (getPiece(loc1) == null || getPiece(loc2) == null){
-            return null;
+            throw new IllegalArgumentException();
         }
         if (getPiece(loc1).getType() == PieceType.UNKNOWN && getPiece(loc2).getType() == PieceType.UNKNOWN){
-            return null;
+            throw new IllegalArgumentException();
         }
         if (getPiece(loc1).getIsMine() == getPiece(loc2).getIsMine()){
-            return null;
+            throw new IllegalArgumentException();
         }
         if (getPiece(loc1).getType() != PieceType.UNKNOWN && getPiece(loc2).getType() != PieceType.UNKNOWN){
             Piece piece1 = getPiece(loc1);
@@ -143,7 +143,46 @@ public class Board {
                 piece1 = getPiece(loc2);
                 piece2 = getPiece(loc1);
             }
-
+            if (piece1.getType() == PieceType.FLAG){
+                return new Result(Compare.LOSS, piece1, piece2);
+            } else if (piece2.getType() == PieceType.FLAG){
+                return new Result(Compare.WIN, piece1, piece2);
+            } else if (piece1.getType() == piece2.getType()){
+                if (piece1.getRank() == piece2.getRank()){
+                    return new Result(Compare.TIE, piece1, piece2);
+                } else if (piece1.getRank() == Rank.ONE ||
+                        (piece1.getRank() == Rank.TWO && piece2.getRank() != Rank.ONE) ||
+                        (piece1.getRank() == Rank.THREE && piece2.getRank() != Rank.ONE && piece2.getRank() != Rank.TWO) ||
+                        (piece1.getRank() == Rank.FOUR && (piece2.getRank() == Rank.FIVE || piece2.getRank() == Rank.BOMB)) ||
+                        (piece1.getRank() == Rank.FIVE && piece2.getRank() == Rank.BOMB)){
+                    return new Result(Compare.LOSS, piece1, piece2);
+                }
+                return new Result(Compare.WIN, piece1, piece2);
+            } else if ((piece1.getType() == PieceType.ROCK && piece2.getType() == PieceType.PAPER) ||
+                    (piece1.getType() == PieceType.PAPER && piece2.getType() == PieceType.SCISSORS) ||
+                    (piece1.getType() == PieceType.SCISSORS && piece2.getType() == PieceType.ROCK)){
+                if ((piece1.getRank() == Rank.THREE && piece2.getRank() == Rank.ONE) ||
+                        (piece1.getRank() == Rank.FOUR && piece2.getRank() == Rank.TWO) ||
+                        (piece1.getRank() == Rank.FIVE && piece2.getRank() == Rank.THREE)) {
+                    return new Result(Compare.TIE, piece1, piece2);
+                } else if (piece1.getRank() == Rank.ONE || piece1.getRank() == Rank.TWO || piece1.getRank() == Rank.THREE ||
+                        (piece1.getRank() == Rank.FOUR && piece2.getRank() != Rank.ONE) ||
+                        (piece1.getRank() == Rank.FIVE && piece2.getRank() != Rank.ONE && piece2.getRank() != Rank.TWO)){
+                    return new Result(Compare.LOSS, piece1, piece2);
+                }
+                return new Result(Compare.WIN, piece1, piece2);
+            } else {
+                if ((piece2.getRank() == Rank.THREE && piece1.getRank() == Rank.ONE) ||
+                        (piece2.getRank() == Rank.FOUR && piece1.getRank() == Rank.TWO) ||
+                        (piece2.getRank() == Rank.FIVE && piece1.getRank() == Rank.THREE)) {
+                    return new Result(Compare.TIE, piece1, piece2);
+                } else if (piece2.getRank() == Rank.ONE || piece2.getRank() == Rank.TWO || piece2.getRank() == Rank.THREE ||
+                        (piece2.getRank() == Rank.FOUR && piece1.getRank() != Rank.ONE) ||
+                        (piece2.getRank() == Rank.FIVE && piece1.getRank() != Rank.ONE && piece1.getRank() != Rank.TWO)){
+                    return new Result(Compare.WIN, piece1, piece2);
+                }
+                return new Result(Compare.LOSS, piece1, piece2);
+            }
         }
         return null; //TODO do Fairplay here to determine win
     }
