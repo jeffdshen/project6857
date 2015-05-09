@@ -6,10 +6,12 @@ package io.github.jeffdshen.project6857.core.board;
 public class Piece {
     private final PieceType type;
     private final Rank rank;
+    private final boolean isMine;
 
-    public Piece(PieceType type, Rank rank){
+    public Piece(PieceType type, Rank rank, boolean isMine){
         this.type = type;
         this.rank = rank;
+        this.isMine = isMine;
     }
 
     public Rank getRank() {
@@ -18,6 +20,10 @@ public class Piece {
 
     public PieceType getType() {
         return type;
+    }
+
+    public boolean getIsMine() {
+        return isMine;
     }
 
     public boolean canMove() {

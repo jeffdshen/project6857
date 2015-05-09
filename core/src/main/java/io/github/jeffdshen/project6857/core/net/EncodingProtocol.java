@@ -23,7 +23,7 @@ public class EncodingProtocol {
         StringBuilder builder = new StringBuilder();
         for (Piece[] row : board) {
             for (Piece p : row) {
-                builder.append(p.getType().ordinal() + "," + p.getRank().ordinal());
+                builder.append(p.getType().ordinal() + "," + p.getRank().ordinal() + "," + p.getIsMine());
                 builder.append(";");
             }
             builder.append(".");
@@ -45,14 +45,15 @@ public class EncodingProtocol {
 
             for (int j = 0; j < cols.length; j++) {
                 String[] typeRank = pieceDelimiter.split(cols[j]);
-                if (typeRank.length != 2) {
+                if (typeRank.length != 3) {
                     throw new IllegalArgumentException();
                 }
 
                 int type = Integer.parseInt(typeRank[0]);
                 int rank = Integer.parseInt(typeRank[1]);
+                boolean isMine = Boolean.parseBoolean(typeRank[2]);
 
-                Piece piece = new Piece(PieceType.values()[type], Rank.values()[rank]);
+                Piece piece = new Piece(PieceType.values()[type], Rank.values()[rank], isMine);
                 board[i][j] = piece;
             }
         }

@@ -15,14 +15,14 @@ public class InitBoard {
 
     public static Map<Piece, Integer> getDefaultPieces(){
         Map<Piece, Integer> map = new HashMap<Piece, Integer>();
-        map.put(new Piece(PieceType.FLAG, Rank.FLAG), 1);
+        map.put(new Piece(PieceType.FLAG, Rank.FLAG, true), 1);
         for (PieceType p : new PieceType[]{PieceType.PAPER, PieceType.ROCK, PieceType.SCISSORS}){
-            map.put(new Piece(p, Rank.ONE), 4);
-            map.put(new Piece(p, Rank.TWO), 3);
-            map.put(new Piece(p, Rank.THREE), 2);
-            map.put(new Piece(p, Rank.FOUR), 1);
-            map.put(new Piece(p, Rank.FIVE), 1);
-            map.put(new Piece(p, Rank.BOMB), 2);
+            map.put(new Piece(p, Rank.ONE, true), 4);
+            map.put(new Piece(p, Rank.TWO, true), 3);
+            map.put(new Piece(p, Rank.THREE, true), 2);
+            map.put(new Piece(p, Rank.FOUR, true), 1);
+            map.put(new Piece(p, Rank.FIVE, true), 1);
+            map.put(new Piece(p, Rank.BOMB, true), 2);
         }
         return map;
     }
@@ -35,7 +35,7 @@ public class InitBoard {
 
         for (int i = 0; i < width; i ++) {
             for (int j = height - playerHeight; j < height; j++) {
-                board[j][i] = new Piece(PieceType.UNKNOWN, Rank.UNKNOWN);
+                board[j][i] = new Piece(PieceType.UNKNOWN, Rank.UNKNOWN, false);
             }
         }
 
@@ -54,7 +54,7 @@ public class InitBoard {
         if (!inBoard(x, y) || this.board[y][x] == null){
             return null;
         }
-        return new Piece(this.board[y][x].getType(), this.board[y][x].getRank());
+        return new Piece(this.board[y][x].getType(), this.board[y][x].getRank(), this.board[y][x].getIsMine());
     }
 
     public boolean setPiece(int x, int y, Piece piece){

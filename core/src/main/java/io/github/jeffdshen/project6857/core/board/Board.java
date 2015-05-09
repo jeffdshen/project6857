@@ -55,7 +55,7 @@ public class Board {
         if (!inBoard(x, y) || this.board[y][x] == null) {
             return null;
         }
-        return new Piece(this.board[y][x].getType(), this.board[y][x].getRank());
+        return new Piece(this.board[y][x].getType(), this.board[y][x].getRank(), this.board[y][x].getIsMine());
     }
 
     private void setPiece(Location loc, Piece piece){
@@ -147,10 +147,10 @@ public class Board {
         if (result == null){
             return false;
         }
-        if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getType().equals(PieceType.UNKNOWN)){
+        if (getPiece(result.getStart()) == null || !getPiece(result.getStart()).getIsMine()){
             return false;
         }
-        else if (getPiece(result.getEnd()) != null && !getPiece(result.getEnd()).getType().equals(PieceType.UNKNOWN)){
+        else if (getPiece(result.getEnd()) != null && getPiece(result.getEnd()).getIsMine()){
             // Cannot move onto your own piece
             return false;
         }
@@ -171,10 +171,10 @@ public class Board {
         if (result == null){
             return false;
         }
-        if (getPiece(result.getStart()) == null || !getPiece(result.getStart()).getType().equals(PieceType.UNKNOWN)){
+        if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getIsMine()){
             return false;
         }
-        else if (getPiece(result.getEnd()) != null && getPiece(result.getEnd()).getType().equals(PieceType.UNKNOWN)){
+        else if (getPiece(result.getEnd()) != null && !getPiece(result.getStart()).getIsMine()){
             // Cannot move onto your own piece
             return false;
         }
