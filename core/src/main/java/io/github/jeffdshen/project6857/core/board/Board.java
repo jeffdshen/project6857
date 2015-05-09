@@ -68,12 +68,11 @@ public class Board {
         board[loc.getY()][loc.getX()] = piece;
     }
 
+    // Returns true if the game is over
     public synchronized boolean startRound() {
         synchronized (myMoveLock) {
             synchronized (theirMoveLock) {
-                if (myMove == null || theirMove == null){
-                    return false;
-                }
+                boolean gameOver = false;
                 Result myStatus;
                 Result theirStatus;
 
@@ -103,12 +102,12 @@ public class Board {
                 Piece theirPiece = getPiece(theirMove.getStart());
                 setPiece(myMove.getStart(), null);
                 setPiece(theirMove.getStart(), null);
-                if (myStatus.getCompare() == Compare.WIN){
+                if (myStatus.getCompare() == Compare.WIN || myStatus.getCompare() == Compare.GAMEWIN){
                     setPiece(myMove.getEnd(), myPiece);
                 } else if (myStatus.getCompare() == Compare.TIE){
                     setPiece(myMove.getEnd(), null);
                 }
-                if (theirStatus.getCompare() == Compare.WIN){
+                if (theirStatus.getCompare() == Compare.WIN || theirStatus.getCompare() == Compare.GAMEWIN){
                     setPiece(theirMove.getEnd(), theirPiece);
                 } else if (theirStatus.getCompare() == Compare.TIE){
                     setPiece(theirMove.getEnd(), null);
@@ -117,11 +116,15 @@ public class Board {
                 // Adds the round to a arraylist
                 rounds.add(new Round(myMove, myStatus, theirMove, theirStatus));
 
-                // Resets the moves
+                // Checks if the game is over
+                if (myStatus.getCompare() == Compare.GAMEWIN || theirStatus.getCompare() == Compare.GAMEWIN){
+                    gameOver = true;
+                }
 
+                // Resets the move
                 myMove = null;
                 theirMove = null;
-                return true;
+                return gameOver;
             }
         }
     }
@@ -144,9 +147,9 @@ public class Board {
                 piece2 = getPiece(loc1);
             }
             if (piece1.getType() == PieceType.FLAG){
-                return new Result(Compare.LOSS, piece1, piece2);
+                return new Result(Compare.GAMELOSS, piece1, piece2);
             } else if (piece2.getType() == PieceType.FLAG){
-                return new Result(Compare.WIN, piece1, piece2);
+                return new Result(Compare.GAMEWIN, piece1, piece2);
             } else if (piece1.getType() == piece2.getType()){
                 if (piece1.getRank() == piece2.getRank()){
                     return new Result(Compare.TIE, piece1, piece2);
