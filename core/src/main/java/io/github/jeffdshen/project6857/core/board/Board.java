@@ -71,7 +71,7 @@ public class Board {
 
         if (myMove.getEnd().equals(theirMove.getEnd())){
             // Checks if the two pieces are colliding on the same square
-            Result result = runFairPlay(myMove.getStart(), theirMove.getStart());
+            Result result = compare(myMove.getStart(), theirMove.getStart());
             myStatus = result;
             theirStatus = result.opposite();
         } else {
@@ -79,14 +79,14 @@ public class Board {
                 // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
                 myStatus = new Result(Compare.WIN, null, null);
             } else {
-                myStatus = runFairPlay(myMove.getStart(), myMove.getEnd());
+                myStatus = compare(myMove.getStart(), myMove.getEnd());
             }
 
             if (getPiece(theirMove.getEnd()) == null || theirMove.getEnd().equals(myMove.getStart())){
                 // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
                 theirStatus = new Result(Compare.WIN, null, null);
             } else {
-                theirStatus = runFairPlay(theirMove.getEnd(), theirMove.getStart()).opposite();
+                theirStatus = compare(theirMove.getEnd(), theirMove.getStart()).opposite();
             }
         }
 
@@ -115,12 +115,32 @@ public class Board {
         return true;
     }
 
-    private Result runFairPlay(Location loc1, Location loc2){
-        return runFairPlay(loc1.getX(), loc1.getY(), loc2.getX(), loc2.getY());
+    private Result compare(Location loc1, Location loc2){
+        if (getPiece(loc1) == null || getPiece(loc2) == null){
+            return null;
+        }
+        if (getPiece(loc1).getType() == PieceType.UNKNOWN && getPiece(loc2).getType() == PieceType.UNKNOWN){
+            return null;
+        }
+        if (getPiece(loc1).getIsMine() == getPiece(loc2).getIsMine()){
+            return null;
+        }
+        if (getPiece(loc1).getType() != PieceType.UNKNOWN && getPiece(loc2).getType() != PieceType.UNKNOWN){
+            Piece piece1 = getPiece(loc1);
+            Piece piece2 = getPiece(loc2);
+            if (!getPiece(loc1).getIsMine()){
+                piece1 = getPiece(loc2);
+                piece2 = getPiece(loc1);
+            }
+
+        }
+        return null; //TODO do Fairplay here to determine win
     }
 
-    private Result runFairPlay(int myX, int myY, int theirX, int theirY){
-        return null; //TODO do Fairplay here to determine win
+    private Result compare(int myX, int myY, int theirX, int theirY){
+        Location loc1 = new Location(myX, myY);
+        Location loc2 = new Location(theirX, theirY);
+        return compare(loc1, loc2);
     }
 
     private Move makeMove(Location loc, Direction direction){
