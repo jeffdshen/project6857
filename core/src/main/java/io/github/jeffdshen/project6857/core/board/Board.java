@@ -186,6 +186,7 @@ public class Board {
                 return false;
             }
             myMove = result;
+            myMoveLock.notifyAll();
             return true;
         }
     }
@@ -211,6 +212,7 @@ public class Board {
                 return false;
             }
             theirMove = result;
+            theirMoveLock.notifyAll();
             return true;
         }
     }
@@ -225,20 +227,18 @@ public class Board {
 
     public Move awaitMyMove() throws InterruptedException {
         synchronized (myMoveLock) {
-            if (myMove != null) {
-                return myMove;
+            while (myMove == null) {
+                myMoveLock.wait();
             }
-            myMoveLock.wait();
             return myMove;
         }
     }
 
     public Move awaitTheirMove() throws InterruptedException {
         synchronized (theirMoveLock) {
-            if (theirMove != null) {
-                return theirMove;
+            while (theirMove != null) {
+                theirMoveLock.wait();
             }
-            theirMoveLock.wait();
             return theirMove;
         }
     }
