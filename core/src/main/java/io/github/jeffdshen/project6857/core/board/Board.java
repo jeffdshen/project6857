@@ -236,7 +236,7 @@ public class Board {
 
     public Move awaitTheirMove() throws InterruptedException {
         synchronized (theirMoveLock) {
-            while (theirMove != null) {
+            while (theirMove == null) {
                 theirMoveLock.wait();
             }
             return theirMove;
