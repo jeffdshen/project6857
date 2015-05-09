@@ -1,6 +1,8 @@
 package io.github.jeffdshen.project6857.core.net;
 
 import io.github.jeffdshen.project6857.core.board.Board;
+import io.github.jeffdshen.project6857.core.board.Direction;
+import io.github.jeffdshen.project6857.core.board.Move;
 import io.github.jeffdshen.project6857.core.board.Piece;
 
 import java.io.BufferedReader;
@@ -48,7 +50,7 @@ public class Connection implements Runnable {
             throw new VerificationException();
         }
 
-        Piece[][] thierInitBoard = EncodingProtocol.decodeBoard(theirInitBoard.getData());
+        Piece[][] theirInitBoard = EncodingProtocol.decodeBoard(this.theirInitBoard.getData());
         // TODO MAKE A NEW BOARD
         // remember that their view is flipped
 
@@ -59,8 +61,42 @@ public class Connection implements Runnable {
     /**
      * Returns true if the game is over.
      */
-    private boolean exchangeMoves() {
-        return false;
+    private boolean exchangeMoves() throws IOException, VerificationException {
+        try {
+            Move myMove = board.awaitMyMove();
+            Commitment myCommit = Commitment.makeCommitment(EncodingProtocol.encodeMove(myMove));
+            out.println(myCommit.getHash());
+            String hash = in.readLine();
+            Commitment theirCommit = Commitment.getCommitment(hash);
+
+            out.println(myCommit.getSecret());
+            String secret = in.readLine();
+            if (!theirCommit.update(secret)) {
+                throw new VerificationException();
+            }
+
+            Move theirMove = EncodingProtocol.decodeMove(theirCommit.getData());
+
+            Direction direction = null;
+            for (Direction d : Direction.values()) {
+                if (theirMove.getStart().add(d).equals(theirMove.getEnd())) {
+                    direction = d;
+                }
+            }
+
+            if (direction == null) {
+                throw new VerificationException();
+            }
+
+            if (board.makeTheirMove(board.getRotatedLocation(theirMove.getStart()), direction)) {
+                throw new VerificationException();
+            }
+
+            return board.startRound();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
@@ -68,7 +104,7 @@ public class Connection implements Runnable {
         try {
             exchangeInitBoard();
 
-            while(exchangeMoves());
+            while(!exchangeMoves());
 
             verifyGame();
 

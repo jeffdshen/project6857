@@ -20,6 +20,10 @@ public class Location {
         return y;
     }
 
+    public Location add(Direction d) {
+        return new Location(x + d.getX(), y + d.getY());
+    }
+
     public boolean equals(Object other){
         if (other == null || other.getClass() != this.getClass()){
             return false;

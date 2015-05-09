@@ -197,7 +197,7 @@ public class Board {
         if (getPiece(loc) == null || !getPiece(loc).canMove()){
             return null;
         }
-        Location end = new Location(loc.getX() + direction.getX(), loc.getY() + direction.getY());
+        Location end = loc.add(direction);
         if (!inBoard(end)){
             return null;
         }
