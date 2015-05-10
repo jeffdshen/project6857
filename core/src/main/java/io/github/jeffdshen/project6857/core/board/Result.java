@@ -1,5 +1,7 @@
 package io.github.jeffdshen.project6857.core.board;
 
+import java.util.Objects;
+
 /**
  * Created by jdshen on 5/5/15.
  */
@@ -31,5 +33,24 @@ public class Result {
 
     public Piece getTheirPiece() {
         return yourPiece;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == null || other.getClass() != this.getClass()){
+            return false;
+        }
+
+        Result that = (Result)other;
+        return (this.compare == that.compare && Objects.equals(this.yourPiece, that.yourPiece)
+            && Objects.equals(this.theirPiece, that.theirPiece));
+    }
+
+    public int hashCode(){
+        int hash = 7;
+        hash = 71 * hash + Objects.hashCode(compare);
+        hash = 71 * hash + Objects.hashCode(yourPiece);
+        hash = 71 * hash + Objects.hashCode(theirPiece);
+        return hash;
     }
 }

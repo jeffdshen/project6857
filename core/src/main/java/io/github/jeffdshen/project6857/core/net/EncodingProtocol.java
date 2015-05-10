@@ -56,10 +56,6 @@ public class EncodingProtocol {
         return board;
     }
 
-    public static String encodeMove(Move move) {
-        return encodeLocation(move.getStart()) + ";" + encodeLocation(move.getEnd());
-    }
-
     public static String encodeLocation(Location loc) {
         return loc.getX() + "," + loc.getY();
     }
@@ -74,14 +70,20 @@ public class EncodingProtocol {
         return new Location(Integer.parseInt(xy[0]), Integer.parseInt(xy[1]));
     }
 
+    public static String encodeMove(Move move) {
+        return encodeLocation(move.getStart()) + ";" + move.getDirection().ordinal();
+    }
+
     public static Move decodeMove(String s) {
         Pattern delimiter = SEMICOLON;
-        String[] locs = delimiter.split(s);
-        if (locs.length != 2) {
+        String[] parts = delimiter.split(s);
+        if (parts.length != 2) {
             throw new IllegalArgumentException();
         }
 
-        return new Move(decodeLocation(locs[0]), decodeLocation(locs[1]));
+        int dirOrd = Integer.parseInt(parts[1]);
+
+        return new Move(decodeLocation(parts[0]), Direction.values()[dirOrd]);
     }
 
     public static String encodePiece(Piece p) {

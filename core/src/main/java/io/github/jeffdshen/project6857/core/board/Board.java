@@ -15,21 +15,33 @@ public class Board {
 
     private final Object myMoveLock;
     private final Object theirMoveLock;
+    private final Object vResultLock;
 
+    private VerificationResult verificationResult;
     private Move myMove;
     private Move theirMove;
     private List<Round> rounds;
     private final int width;
     private final int height;
 
+
     public Board(Piece[][] board, PieceComparer comparer){
-        this.board = board;
+        // copy since we end up modifying board
+        this.board = new Piece[board.length][];
+        for (int i = 0; i < board.length; i++) {
+            this.board[i] = new Piece[board[i].length];
+            for (int j = 0; j < board.length; j++) {
+                this.board[i][j] = board[i][j];
+            }
+        }
+
         this.comparer = comparer;
         height = board.length;
         width = board[0].length;
         rounds = new ArrayList<>();
         myMoveLock = new Object();
         theirMoveLock = new Object();
+        vResultLock = new Object();
     }
 
     public synchronized Piece[][] getBoard(){
@@ -214,7 +226,7 @@ public class Board {
         if (!inBoard(end)){
             return null;
         }
-        return new Move(loc, end);
+        return new Move(loc, direction);
     }
 
     public synchronized boolean makeMyMove(Location loc, Direction direction){
@@ -269,6 +281,14 @@ public class Board {
         }
     }
 
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
     public synchronized List<Round> getRounds(){
         return new ArrayList<>(rounds);
     }
@@ -292,6 +312,28 @@ public class Board {
                 theirMoveLock.wait();
             }
             return theirMove;
+        }
+    }
+
+    public synchronized VerificationResult getVerificationResult() {
+        synchronized (vResultLock) {
+            return verificationResult;
+        }
+    }
+
+    public synchronized void setVerificationResult(VerificationResult verificationResult) {
+        synchronized (vResultLock) {
+            this.verificationResult = verificationResult;
+            vResultLock.notifyAll();
+        }
+    }
+
+    public synchronized VerificationResult awaitVerificationResult() throws InterruptedException {
+        synchronized (vResultLock) {
+            while (verificationResult == null) {
+                vResultLock.wait();
+            }
+            return verificationResult;
         }
     }
 

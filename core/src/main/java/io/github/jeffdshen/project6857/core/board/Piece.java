@@ -36,7 +36,7 @@ public class Piece {
         }
 
         Piece that = (Piece)other;
-        return (this.type == that.type && this.rank == that.rank);
+        return (this.type == that.type && this.rank == that.rank && this.isMine == that.isMine);
     }
 
     @Override
@@ -48,6 +48,7 @@ public class Piece {
         int hash = 7;
         hash = 71 * hash + this.type.hashCode();
         hash = 71 * hash + this.rank.hashCode();
+        hash = 71 * hash + (this.isMine ? 1 : 0);
         return hash;
     }
 }

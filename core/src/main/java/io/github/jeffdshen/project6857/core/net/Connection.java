@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.List;
 
 /**
  * Created by chenp on 5/5/2015.
@@ -15,6 +16,7 @@ public class Connection implements Runnable, PieceComparer {
     private Socket socket;
     private Board board;
     private Piece[][] initBoard;
+    private int playerHeight;
     private FairplayComparer fairplay;
     private BufferedReader in;
     private PrintWriter out;
@@ -23,11 +25,12 @@ public class Connection implements Runnable, PieceComparer {
     private Commitment theirInitBoard;
 
     public Connection(
-        Socket socket, Board board, Piece[][] initBoard, Fairplay fairplay
+        Socket socket, Board board, Piece[][] initBoard, int playerHeight, Fairplay fairplay
     ) throws IOException {
         this.socket = socket;
         this.board = board;
         this.initBoard = initBoard;
+        this.playerHeight = playerHeight;
         this.fairplay = fairplay;
         in = new BufferedReader(new InputStreamReader(
                 socket.getInputStream()));
@@ -43,20 +46,78 @@ public class Connection implements Runnable, PieceComparer {
         theirInitBoard = Commitment.getCommitment(hash);
     }
 
+    private void verifyCondition(boolean condition) throws VerificationException {
+        if (!condition) {
+            throw new VerificationException();
+        }
+    }
+
+    private void verifyInitBoard(Piece[][] theirInitBoard) throws VerificationException {
+        InitBoard initVerifier = new InitBoard(
+            board.getWidth(), board.getHeight(), playerHeight, InitBoard.getDefaultPieces()
+        );
+
+        // verify exact number of pieces are used
+        for (int i = 0; i < theirInitBoard.length; i++) {
+            for (int j = 0; j < theirInitBoard[i].length; j++) {
+                Piece piece = theirInitBoard[j][i];
+                if (piece != null && piece.getIsMine()) {
+                    verifyCondition(initVerifier.setPiece(i, j, piece));
+                }
+            }
+        }
+        verifyCondition(initVerifier.noRemainingPieces());
+
+        Piece[][] initBoardVerifier = initVerifier.getBoard();
+        verifyCondition(initBoardVerifier.length == theirInitBoard.length);
+        for (int i = 0; i < initBoardVerifier.length; i++) {
+            verifyCondition(initBoardVerifier[i].length == theirInitBoard[i].length);
+            for (int j = 0; j < initBoardVerifier[i].length; j++) {
+                verifyCondition(initBoardVerifier[i][j] == theirInitBoard[i][j]);
+            }
+        }
+    }
+
+    private void verifyBoard(Piece[][] theirInitBoard) throws VerificationException, IOException {
+        Piece[][] combinedBoard = new Piece[initBoard.length][initBoard[0].length];
+        for (int i = 0; i < initBoard.length; i++) {
+            for (int j = 0; j < initBoard[i].length; j++) {
+                if (initBoard[j][i] != null && initBoard[j][i].getIsMine()) {
+                    combinedBoard[j][i] = initBoard[j][i];
+                }
+                Location loc = board.getRotatedLocation(new Location(j, i));
+                if (theirInitBoard[j][i] != null && theirInitBoard[j][i].getIsMine()) {
+                    Piece theirs = theirInitBoard[j][i];
+                    combinedBoard[loc.getY()][loc.getX()] = new Piece(theirs.getType(), theirs.getRank(), false);
+                }
+            }
+        }
+        Board verifier = new Board(combinedBoard, null);
+
+        List<Round> rounds = board.getRounds();
+        for (Round round : rounds) {
+            Move myMove = round.getMyMove();
+            Move theirMove = round.getTheirMove();
+            verifyCondition(verifier.makeMyMove(myMove.getStart(), myMove.getDirection()));
+            verifyCondition(verifier.makeTheirMove(theirMove.getStart(), theirMove.getDirection()));
+
+            boolean over = verifier.startRound();
+
+            Round last = verifier.getLastRound();
+            verifyCondition(last.getMyStatus().equals(round.getMyStatus()));
+            verifyCondition(last.getTheirStatus().equals(round.getTheirStatus()));
+
+            verifyCondition(over == (rounds.get(rounds.size() - 1) == round));
+        }
+    }
+
     private void verifyGame() throws IOException, VerificationException {
         out.println(myInitBoard.getSecret());
         String secret = in.readLine();
-        boolean verified = theirInitBoard.update(secret);
-        if (!verified) {
-            throw new VerificationException();
-        }
-
+        verifyCondition(theirInitBoard.update(secret));
         Piece[][] theirInitBoard = EncodingProtocol.decodeBoard(this.theirInitBoard.getData());
-        // TODO MAKE A NEW BOARD
-        // remember that their view is flipped
-
-
-        // TODO REPLAY ALL MOVES
+        verifyInitBoard(theirInitBoard);
+        verifyBoard(theirInitBoard);
     }
 
     /**
@@ -72,26 +133,13 @@ public class Connection implements Runnable, PieceComparer {
 
             out.println(myCommit.getSecret());
             String secret = in.readLine();
-            if (!theirCommit.update(secret)) {
-                throw new VerificationException();
-            }
+            verifyCondition(theirCommit.update(secret));
 
             Move theirMove = EncodingProtocol.decodeMove(theirCommit.getData());
 
-            Direction direction = null;
-            for (Direction d : Direction.values()) {
-                if (theirMove.getStart().add(d).equals(theirMove.getEnd())) {
-                    direction = d;
-                }
-            }
-
-            if (direction == null) {
-                throw new VerificationException();
-            }
-
-            if (board.makeTheirMove(board.getRotatedLocation(theirMove.getStart()), direction)) {
-                throw new VerificationException();
-            }
+            Direction dir = theirMove.getDirection();
+            verifyCondition(dir != null);
+            verifyCondition(board.makeTheirMove(board.getRotatedLocation(theirMove.getStart()), dir));
 
             return board.startRound();
         } catch (InterruptedException e) {
@@ -108,14 +156,15 @@ public class Connection implements Runnable, PieceComparer {
             while (!exchangeMoves()) ;
 
             verifyGame();
-
         } catch (IOException e) {
-            // TODO bad connection
+            board.setVerificationResult(new VerificationResult("Connection error", e));
         } catch (RuntimeException e) {
-            // TODO bad encoding, invalid game (or possibly cheater)
+            board.setVerificationResult(new VerificationResult("Invalid move or encoding", e));
         } catch (VerificationException e) {
-            // TODO CHEATER (probably)
+            board.setVerificationResult(new VerificationResult("Rule violation", e));
         }
+
+        board.setVerificationResult(new VerificationResult("Verified", null));
 
         // end
         try {

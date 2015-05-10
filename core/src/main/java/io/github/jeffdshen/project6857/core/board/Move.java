@@ -6,10 +6,16 @@ package io.github.jeffdshen.project6857.core.board;
 public class Move {
     private final Location start;
     private final Location end;
+    private final Direction dir;
 
-    public Move(Location start, Location end){
+    public Move(Location start, Direction dir){
         this.start = start;
-        this.end = end;
+        this.end = start.add(dir);
+        this.dir = dir;
+    }
+
+    public Direction getDirection() {
+        return dir;
     }
 
     public Location getEnd() {
