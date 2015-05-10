@@ -25,10 +25,9 @@ public class Connection implements Runnable, PieceComparer {
     private Commitment theirInitBoard;
 
     public Connection(
-        Socket socket, Board board, Piece[][] initBoard, int playerHeight, FairplayComparer fairplay
+        Socket socket, Piece[][] initBoard, int playerHeight, FairplayComparer fairplay
     ) throws IOException {
         this.socket = socket;
-        this.board = board;
         this.initBoard = initBoard;
         this.playerHeight = playerHeight;
         this.fairplay = fairplay;
@@ -36,6 +35,10 @@ public class Connection implements Runnable, PieceComparer {
                 socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(),
                 true);
+    }
+
+    public void setBoard(Board board) {
+        this.board = board;
     }
 
     private void exchangeInitBoard() throws IOException {
