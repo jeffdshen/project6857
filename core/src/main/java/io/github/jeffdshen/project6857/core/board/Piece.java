@@ -14,6 +14,10 @@ public class Piece {
         this.isMine = isMine;
     }
 
+    public Piece flipSides() {
+        return new Piece(type, rank, !isMine);
+    }
+
     public Rank getRank() {
         return rank;
     }

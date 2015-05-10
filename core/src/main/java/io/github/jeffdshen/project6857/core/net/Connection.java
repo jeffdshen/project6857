@@ -25,7 +25,7 @@ public class Connection implements Runnable, PieceComparer {
     private Commitment theirInitBoard;
 
     public Connection(
-        Socket socket, Board board, Piece[][] initBoard, int playerHeight, Fairplay fairplay
+        Socket socket, Board board, Piece[][] initBoard, int playerHeight, FairplayComparer fairplay
     ) throws IOException {
         this.socket = socket;
         this.board = board;
@@ -88,7 +88,7 @@ public class Connection implements Runnable, PieceComparer {
                 Location loc = board.getRotatedLocation(new Location(j, i));
                 if (theirInitBoard[j][i] != null && theirInitBoard[j][i].getIsMine()) {
                     Piece theirs = theirInitBoard[j][i];
-                    combinedBoard[loc.getY()][loc.getX()] = new Piece(theirs.getType(), theirs.getRank(), false);
+                    combinedBoard[loc.getY()][loc.getX()] = theirs.flipSides();
                 }
             }
         }
@@ -199,7 +199,7 @@ public class Connection implements Runnable, PieceComparer {
         }
 
         if (compare == Compare.GAMEWIN || compare == Compare.WIN || compare == Compare.TIE) {
-            theirPiece = EncodingProtocol.decodePiece(in.readLine());
+            theirPiece = EncodingProtocol.decodePiece(in.readLine()).flipSides();
         }
 
         return new Result(compare, yourPiece, theirPiece);
