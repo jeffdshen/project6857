@@ -1,5 +1,8 @@
 package io.github.jeffdshen.project6857.core.board;
 
+import io.github.jeffdshen.project6857.core.net.PieceComparer;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,9 +11,10 @@ import java.util.List;
  */
 public class Board {
     private Piece[][] board;
+    private final PieceComparer comparer;
 
-    private Object myMoveLock;
-    private Object theirMoveLock;
+    private final Object myMoveLock;
+    private final Object theirMoveLock;
 
     private Move myMove;
     private Move theirMove;
@@ -18,8 +22,9 @@ public class Board {
     private final int width;
     private final int height;
 
-    public Board(Piece[][] board){
+    public Board(Piece[][] board, PieceComparer comparer){
         this.board = board;
+        this.comparer = comparer;
         height = board.length;
         width = board[0].length;
         rounds = new ArrayList<>();
@@ -69,7 +74,7 @@ public class Board {
     }
 
     // Returns true if the game is over
-    public synchronized boolean startRound() {
+    public synchronized boolean startRound() throws IOException {
         synchronized (myMoveLock) {
             synchronized (theirMoveLock) {
                 boolean gameOver = false;
@@ -129,7 +134,7 @@ public class Board {
         }
     }
 
-    private Result compare(Location loc1, Location loc2){
+    private Result compare(Location loc1, Location loc2) throws IOException {
         if (getPiece(loc1) == null || getPiece(loc2) == null){
             throw new IllegalArgumentException();
         }
@@ -187,10 +192,15 @@ public class Board {
                 return new Result(Compare.LOSS, piece1, null);
             }
         }
-        return null; //TODO do Fairplay here to determine win
+
+        Piece piece1 = getPiece(loc1);
+        if (!getPiece(loc1).getIsMine()){
+            piece1 = getPiece(loc2);
+        }
+        return comparer.compare(piece1);
     }
 
-    private Result compare(int myX, int myY, int theirX, int theirY){
+    private Result compare(int myX, int myY, int theirX, int theirY) throws IOException {
         Location loc1 = new Location(myX, myY);
         Location loc2 = new Location(theirX, theirY);
         return compare(loc1, loc2);
@@ -249,7 +259,7 @@ public class Board {
             }
             if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getIsMine()) {
                 return false;
-            } else if (getPiece(result.getEnd()) != null && !getPiece(result.getStart()).getIsMine()) {
+            } else if (getPiece(result.getEnd()) != null && !getPiece(result.getEnd()).getIsMine()) {
                 // Cannot move onto your own piece
                 return false;
             }
@@ -283,5 +293,19 @@ public class Board {
             }
             return theirMove;
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        for (Piece[] row : board) {
+            for (Piece p : row) {
+                builder.append(p);
+                builder.append(" ");
+            }
+            builder.append("\n");
+        }
+        return builder.toString();
     }
 }

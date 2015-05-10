@@ -9,6 +9,12 @@ import java.util.regex.Pattern;
  */
 public class EncodingProtocol {
     final protected static char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+
+    private final static Pattern PERIOD = Pattern.compile("\\.");
+    private final static Pattern SEMICOLON = Pattern.compile(";");
+    private final static Pattern COMMA = Pattern.compile(",");
+
+
     public static String encodeBytes(byte[] bytes) {
         StringBuilder builder = new StringBuilder();
         for (byte aByte : bytes) {
@@ -23,7 +29,7 @@ public class EncodingProtocol {
         StringBuilder builder = new StringBuilder();
         for (Piece[] row : board) {
             for (Piece p : row) {
-                builder.append(p.getType().ordinal() + "," + p.getRank().ordinal() + "," + p.getIsMine());
+                builder.append(encodePiece(p));
                 builder.append(";");
             }
             builder.append(".");
@@ -32,9 +38,8 @@ public class EncodingProtocol {
     }
 
     public static Piece[][] decodeBoard(String s) {
-        Pattern rowDelimiter = Pattern.compile("\\.");
-        Pattern colDelimiter = Pattern.compile(";");
-        Pattern pieceDelimiter = Pattern.compile(",");
+        Pattern rowDelimiter = PERIOD;
+        Pattern colDelimiter = SEMICOLON;
 
         String[] rows = rowDelimiter.split(s);
         Piece[][] board = new Piece[rows.length][];
@@ -44,16 +49,7 @@ public class EncodingProtocol {
             board[i] = new Piece[cols.length];
 
             for (int j = 0; j < cols.length; j++) {
-                String[] typeRank = pieceDelimiter.split(cols[j]);
-                if (typeRank.length != 3) {
-                    throw new IllegalArgumentException();
-                }
-
-                int type = Integer.parseInt(typeRank[0]);
-                int rank = Integer.parseInt(typeRank[1]);
-                boolean isMine = Boolean.parseBoolean(typeRank[2]);
-
-                Piece piece = new Piece(PieceType.values()[type], Rank.values()[rank], isMine);
+                Piece piece = decodePiece(cols[j]);
                 board[i][j] = piece;
             }
         }
@@ -69,7 +65,7 @@ public class EncodingProtocol {
     }
 
     public static Location decodeLocation(String s) {
-        Pattern delimiter = Pattern.compile(",");
+        Pattern delimiter = COMMA;
         String[] xy = delimiter.split(s);
         if (xy.length != 2) {
             throw new IllegalArgumentException();
@@ -79,7 +75,7 @@ public class EncodingProtocol {
     }
 
     public static Move decodeMove(String s) {
-        Pattern delimiter = Pattern.compile(";");
+        Pattern delimiter = SEMICOLON;
         String[] locs = delimiter.split(s);
         if (locs.length != 2) {
             throw new IllegalArgumentException();
@@ -87,4 +83,31 @@ public class EncodingProtocol {
 
         return new Move(decodeLocation(locs[0]), decodeLocation(locs[1]));
     }
+
+    public static String encodePiece(Piece p) {
+        if (p == null) {
+            return "null";
+        }
+
+        return p.getType().ordinal() + "," + p.getRank().ordinal() + "," + p.getIsMine();
+    }
+
+    public static Piece decodePiece(String s) {
+        if (s.equals("null")) {
+            return null;
+        }
+
+        Pattern pieceDelimiter = COMMA;
+        String[] typeRank = pieceDelimiter.split(s);
+        if (typeRank.length != 3) {
+            throw new IllegalArgumentException();
+        }
+
+        int type = Integer.parseInt(typeRank[0]);
+        int rank = Integer.parseInt(typeRank[1]);
+        boolean isMine = Boolean.parseBoolean(typeRank[2]);
+
+        return new Piece(PieceType.values()[type], Rank.values()[rank], isMine);
+    }
+
 }

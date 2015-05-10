@@ -39,6 +39,11 @@ public class Piece {
         return (this.type == that.type && this.rank == that.rank);
     }
 
+    @Override
+    public String toString() {
+        return type + "," + rank + "," + isMine;
+    }
+
     public int hashCode(){
         int hash = 7;
         hash = 71 * hash + this.type.hashCode();

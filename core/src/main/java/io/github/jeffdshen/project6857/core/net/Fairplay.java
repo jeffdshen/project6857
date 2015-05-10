@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Fairplay implements PieceComparer {
+public class Fairplay implements FairplayComparer {
     public static Map<PieceType, Integer> TYPE_TO_INT = typeToInt();
     public static Map<Rank, Integer> RANK_TO_INT = rankToInt();
     public static Map<Integer, Compare> INT_TO_COMPARE = intToCompare();

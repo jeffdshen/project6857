@@ -1,9 +1,6 @@
 package io.github.jeffdshen.project6857.core.net;
 
-import io.github.jeffdshen.project6857.core.board.Board;
-import io.github.jeffdshen.project6857.core.board.Direction;
-import io.github.jeffdshen.project6857.core.board.Move;
-import io.github.jeffdshen.project6857.core.board.Piece;
+import io.github.jeffdshen.project6857.core.board.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,20 +11,24 @@ import java.net.Socket;
 /**
  * Created by chenp on 5/5/2015.
  */
-public class Connection implements Runnable {
+public class Connection implements Runnable, PieceComparer {
     private Socket socket;
     private Board board;
     private Piece[][] initBoard;
+    private FairplayComparer fairplay;
     private BufferedReader in;
     private PrintWriter out;
 
     private Commitment myInitBoard;
     private Commitment theirInitBoard;
 
-    public Connection(Socket socket, Board board, Piece[][] initBoard) throws IOException {
+    public Connection(
+        Socket socket, Board board, Piece[][] initBoard, Fairplay fairplay
+    ) throws IOException {
         this.socket = socket;
         this.board = board;
         this.initBoard = initBoard;
+        this.fairplay = fairplay;
         in = new BufferedReader(new InputStreamReader(
                 socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(),
@@ -104,7 +105,7 @@ public class Connection implements Runnable {
         try {
             exchangeInitBoard();
 
-            while(!exchangeMoves());
+            while (!exchangeMoves()) ;
 
             verifyGame();
 
@@ -122,5 +123,36 @@ public class Connection implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public Result compare(Piece piece) throws IOException {
+        PieceType type = piece.getType();
+        Rank rank = piece.getRank();
+        boolean loss = type == PieceType.FLAG;
+        out.println(loss);
+        boolean won = Boolean.parseBoolean(in.readLine());
+        Compare compare;
+        if (loss) {
+            compare = Compare.GAMELOSS;
+        } else if (won) {
+            compare = Compare.GAMEWIN;
+        } else {
+            compare = fairplay.compare(type, rank);
+        }
+
+        Piece yourPiece = null;
+        Piece theirPiece = null;
+
+        if (compare == Compare.GAMELOSS || compare == Compare.LOSS || compare == Compare.TIE) {
+            out.println(EncodingProtocol.encodePiece(piece));
+            yourPiece = piece;
+        }
+
+        if (compare == Compare.GAMEWIN || compare == Compare.WIN || compare == Compare.TIE) {
+            theirPiece = EncodingProtocol.decodePiece(in.readLine());
+        }
+
+        return new Result(compare, yourPiece, theirPiece);
     }
 }

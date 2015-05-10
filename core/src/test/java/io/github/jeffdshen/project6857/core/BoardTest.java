@@ -13,22 +13,22 @@ public class BoardTest {
     public void initializeBoardTest(){
         InitBoard initBoard = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
         initBoard.setPiece(0, 3, new Piece(PieceType.PAPER, Rank.FIVE, true));
-        Board board = new Board(initBoard.getBoard());
+        Board board = new Board(initBoard.getBoard(), null);
         assertEquals(board.getPiece(0, 3), new Piece(PieceType.PAPER, Rank.FIVE, true));
     }
 
     @Test
-    public void moveTest(){
+    public void moveTest() throws Exception{
         InitBoard initBoard = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
         initBoard.setPiece(0, 3, new Piece(PieceType.PAPER, Rank.FIVE, true));
         initBoard.setPiece(5, 3, new Piece(PieceType.PAPER, Rank.FOUR, true));
         initBoard.setPiece(4, 3, new Piece(PieceType.PAPER, Rank.FOUR, true));
-        Board board = new Board(initBoard.getBoard());
+        Board board = new Board(initBoard.getBoard(), null);
 
         // Moves correctly
         assertTrue(board.makeMyMove(0, 3, Direction.FORWARD));
         assertTrue(board.makeTheirMove(0, 6, Direction.BACKWARD));
-        assertTrue(board.startRound());
+        assertFalse(board.startRound());
         assertNull(board.getPiece(0, 3));
         assertNull(board.getPiece(0, 6));
         assertEquals(board.getPiece(0, 4), new Piece(PieceType.PAPER, Rank.FIVE, true));
@@ -45,7 +45,7 @@ public class BoardTest {
         // If two pieces move onto each others' square, no conflicts
         assertTrue(board.makeMyMove(0, 4, Direction.FORWARD));
         assertTrue(board.makeTheirMove(0, 5, Direction.BACKWARD));
-        assertTrue(board.startRound());
+        assertFalse(board.startRound());
         assertEquals(board.getPiece(0, 5), new Piece(PieceType.PAPER, Rank.FIVE, true));
         assertEquals(board.getPiece(0, 4), new Piece(PieceType.UNKNOWN, Rank.UNKNOWN, false));
     }
