@@ -8,10 +8,15 @@ import io.github.jeffdshen.project6857.core.board.Rank;
 import java.io.*;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Fairplay {
+public class Fairplay implements FairplayComparer {
+    public static Map<PieceType, Integer> TYPE_TO_INT = typeToInt();
+    public static Map<Rank, Integer> RANK_TO_INT = rankToInt();
+    public static Map<Integer, Compare> INT_TO_COMPARE = intToCompare();
+
     private final String ip;
     private final boolean alice;
     private final File dir;
@@ -20,6 +25,33 @@ public class Fairplay {
     private final String namePrefix;
     private final String outputPrefix;
     private final String inputPrefix;
+
+    private static Map<PieceType, Integer> typeToInt() {
+        Map<PieceType, Integer> map = new HashMap<>();
+        map.put(PieceType.ROCK, 0);
+        map.put(PieceType.PAPER, 1);
+        map.put(PieceType.SCISSORS, 2);
+        return Collections.unmodifiableMap(map);
+    }
+
+    private static Map<Rank, Integer> rankToInt() {
+        Map<Rank, Integer> map = new HashMap<>();
+        map.put(Rank.BOMB, 0);
+        map.put(Rank.ONE, 1);
+        map.put(Rank.TWO, 2);
+        map.put(Rank.THREE, 3);
+        map.put(Rank.FOUR, 4);
+        map.put(Rank.FIVE, 5);
+        return Collections.unmodifiableMap(map);
+    }
+
+    private static Map<Integer, Compare> intToCompare() {
+        Map<Integer, Compare> map = new HashMap<>();
+        map.put(0, Compare.WIN);
+        map.put(1, Compare.LOSS);
+        map.put(2, Compare.TIE);
+        return Collections.unmodifiableMap(map);
+    }
 
     public Fairplay(String ip, boolean alice, File dir, String pathExec, String pathSFDL) {
         this.ip = ip;
@@ -75,9 +107,9 @@ public class Fairplay {
      */
     public Compare compare(PieceType type, Rank rank) throws IOException {
         HashMap<String, String> map = new HashMap<>();
-        map.put(inputPrefix + "type", type.ordinal() + "");
-        map.put(inputPrefix + "rank", rank.ordinal() + "");
-        return Compare.values()[compare(map)];
+        map.put(inputPrefix + "type", TYPE_TO_INT.get(type) + "");
+        map.put(inputPrefix + "rank", RANK_TO_INT.get(rank) + "");
+        return INT_TO_COMPARE.get(compare(map));
     }
 
     /**

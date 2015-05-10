@@ -1,7 +1,9 @@
 package io.github.jeffdshen.project6857.core.board;
 
+import io.github.jeffdshen.project6857.core.net.PieceComparer;
+
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -9,17 +11,37 @@ import java.util.List;
  */
 public class Board {
     private Piece[][] board;
+    private final PieceComparer comparer;
+
+    private final Object myMoveLock;
+    private final Object theirMoveLock;
+    private final Object vResultLock;
+
+    private VerificationResult verificationResult;
     private Move myMove;
     private Move theirMove;
     private List<Round> rounds;
-    private int width;
-    private int height;
+    private final int width;
+    private final int height;
 
-    public Board(Piece[][] board){
-        this.board = board;
+
+    public Board(Piece[][] board, PieceComparer comparer){
+        // copy since we end up modifying board
+        this.board = new Piece[board.length][];
+        for (int i = 0; i < board.length; i++) {
+            this.board[i] = new Piece[board[i].length];
+            for (int j = 0; j < board.length; j++) {
+                this.board[i][j] = board[i][j];
+            }
+        }
+
+        this.comparer = comparer;
         height = board.length;
         width = board[0].length;
-        rounds = new ArrayList<Round>();
+        rounds = new ArrayList<>();
+        myMoveLock = new Object();
+        theirMoveLock = new Object();
+        vResultLock = new Object();
     }
 
     public synchronized Piece[][] getBoard(){
@@ -56,105 +78,155 @@ public class Board {
         if (!inBoard(x, y) || this.board[y][x] == null) {
             return null;
         }
-        return new Piece(this.board[y][x].getType(), this.board[y][x].getRank());
+        return new Piece(this.board[y][x].getType(), this.board[y][x].getRank(), this.board[y][x].getIsMine());
     }
 
     private void setPiece(Location loc, Piece piece){
         board[loc.getY()][loc.getX()] = piece;
     }
 
-    public synchronized boolean startRound(){
-        if (myMove == null || theirMove == null){
-            return false;
-        }
-        Compare myStatus;
-        Compare theirStatus;
+    // Returns true if the game is over
+    public synchronized boolean startRound() throws IOException {
+        synchronized (myMoveLock) {
+            synchronized (theirMoveLock) {
+                boolean gameOver = false;
+                Result myStatus;
+                Result theirStatus;
 
-        if (myMove.getEnd().equals(theirMove.getEnd())){
-            // Checks if the two pieces are colliding on the same square
-            Compare result = runFairPlay(myMove.getStart(), theirMove.getStart());
-            if (result.equals(Compare.WIN)){
-                myStatus = Compare.WIN;
-                theirStatus = Compare.LOSS;
-            } else if (result.equals(Compare.LOSS)){
-                myStatus = Compare.LOSS;
-                theirStatus = Compare.WIN;
-            } else {
-                myStatus = Compare.TIE;
-                theirStatus = Compare.TIE;
-            }
-        } else {
-            if (getPiece(myMove.getEnd()) == null || myMove.getEnd().equals(theirMove.getStart())){
-                // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
-                myStatus = Compare.WIN;
-            } else {
-                Compare result = runFairPlay(myMove.getStart(), myMove.getEnd());
-                if (result.equals(Compare.WIN)){
-                    myStatus = Compare.WIN;
-                } else if (result.equals(Compare.LOSS)){
-                    myStatus = Compare.LOSS;
+                if (myMove.getEnd().equals(theirMove.getEnd())){
+                    // Checks if the two pieces are colliding on the same square
+                    Result result = compare(myMove.getStart(), theirMove.getStart());
+                    myStatus = result;
+                    theirStatus = result.opposite();
                 } else {
-                    myStatus = Compare.TIE;
+                    if (getPiece(myMove.getEnd()) == null || myMove.getEnd().equals(theirMove.getStart())){
+                        // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
+                        myStatus = new Result(Compare.WIN, null, null);
+                    } else {
+                        myStatus = compare(myMove.getStart(), myMove.getEnd());
+                    }
+
+                    if (getPiece(theirMove.getEnd()) == null || theirMove.getEnd().equals(myMove.getStart())){
+                        // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
+                        theirStatus = new Result(Compare.WIN, null, null);
+                    } else {
+                        theirStatus = compare(theirMove.getEnd(), theirMove.getStart()).opposite();
+                    }
                 }
-            }
 
-            if (getPiece(theirMove.getEnd()) == null || theirMove.getEnd().equals(myMove.getStart())){
-                // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
-                theirStatus = Compare.WIN;
-            } else {
-                Compare result = runFairPlay(theirMove.getEnd(), theirMove.getStart());
-                if (result.equals(Compare.LOSS)){
-                    theirStatus = Compare.WIN;
-                } else if (result.equals(Compare.WIN)){
-                    theirStatus = Compare.LOSS;
-                } else {
-                    theirStatus = Compare.TIE;
+                // Sets the end location based on the comparison results
+                Piece myPiece = getPiece(myMove.getStart());
+                Piece theirPiece = getPiece(theirMove.getStart());
+                setPiece(myMove.getStart(), null);
+                setPiece(theirMove.getStart(), null);
+                if (myStatus.getCompare() == Compare.WIN || myStatus.getCompare() == Compare.GAMEWIN){
+                    setPiece(myMove.getEnd(), myPiece);
+                } else if (myStatus.getCompare() == Compare.TIE){
+                    setPiece(myMove.getEnd(), null);
                 }
+                if (theirStatus.getCompare() == Compare.WIN || theirStatus.getCompare() == Compare.GAMEWIN){
+                    setPiece(theirMove.getEnd(), theirPiece);
+                } else if (theirStatus.getCompare() == Compare.TIE){
+                    setPiece(theirMove.getEnd(), null);
+                }
+
+                // Adds the round to a arraylist
+                rounds.add(new Round(myMove, myStatus, theirMove, theirStatus));
+
+                // Checks if the game is over
+                if (myStatus.getCompare() == Compare.GAMEWIN || theirStatus.getCompare() == Compare.GAMEWIN){
+                    gameOver = true;
+                }
+
+                // Resets the move
+                myMove = null;
+                theirMove = null;
+                return gameOver;
             }
         }
-
-        // Sets the end location based on the comparison results
-        Piece myPiece = getPiece(myMove.getStart());
-        Piece theirPiece = getPiece(theirMove.getStart());
-        setPiece(myMove.getStart(), null);
-        setPiece(theirMove.getStart(), null);
-        if (myStatus.equals(Compare.WIN)){
-            setPiece(myMove.getEnd(), myPiece);
-        } else if (myStatus.equals(Compare.TIE)){
-            setPiece(myMove.getEnd(), null);
-        }
-        if (theirStatus.equals(Compare.WIN)){
-            setPiece(theirMove.getEnd(), theirPiece);
-        } else if (theirStatus.equals(Compare.TIE)){
-            setPiece(theirMove.getEnd(), null);
-        }
-
-        // Adds the round to a arraylist
-        rounds.add(new Round(myMove, myStatus, theirMove, theirStatus));
-
-        // Resets the moves
-        myMove = null;
-        theirMove = null;
-        return true;
     }
 
-    private Compare runFairPlay(Location loc1, Location loc2){
-        return runFairPlay(loc1.getX(), loc1.getY(), loc2.getX(), loc2.getY());
+    private Result compare(Location loc1, Location loc2) throws IOException {
+        if (getPiece(loc1) == null || getPiece(loc2) == null){
+            throw new IllegalArgumentException();
+        }
+        if (getPiece(loc1).getType() == PieceType.UNKNOWN && getPiece(loc2).getType() == PieceType.UNKNOWN){
+            throw new IllegalArgumentException();
+        }
+        if (getPiece(loc1).getIsMine() == getPiece(loc2).getIsMine()){
+            throw new IllegalArgumentException();
+        }
+        if (getPiece(loc1).getType() != PieceType.UNKNOWN && getPiece(loc2).getType() != PieceType.UNKNOWN){
+            Piece piece1 = getPiece(loc1);
+            Piece piece2 = getPiece(loc2);
+            if (!getPiece(loc1).getIsMine()){
+                piece1 = getPiece(loc2);
+                piece2 = getPiece(loc1);
+            }
+            if (piece1.getType() == PieceType.FLAG){
+                return new Result(Compare.GAMELOSS, piece1, null);
+            } else if (piece2.getType() == PieceType.FLAG){
+                return new Result(Compare.GAMEWIN, null, piece2);
+            } else if (piece1.getType() == piece2.getType()){
+                if (piece1.getRank() == piece2.getRank()){
+                    return new Result(Compare.TIE, piece1, piece2);
+                } else if (piece1.getRank() == Rank.ONE ||
+                        (piece1.getRank() == Rank.TWO && piece2.getRank() != Rank.ONE) ||
+                        (piece1.getRank() == Rank.THREE && piece2.getRank() != Rank.ONE && piece2.getRank() != Rank.TWO) ||
+                        (piece1.getRank() == Rank.FOUR && (piece2.getRank() == Rank.FIVE || piece2.getRank() == Rank.BOMB)) ||
+                        (piece1.getRank() == Rank.FIVE && piece2.getRank() == Rank.BOMB)){
+                    return new Result(Compare.LOSS, piece1, null);
+                }
+                return new Result(Compare.WIN, piece1, piece2);
+            } else if ((piece1.getType() == PieceType.ROCK && piece2.getType() == PieceType.PAPER) ||
+                    (piece1.getType() == PieceType.PAPER && piece2.getType() == PieceType.SCISSORS) ||
+                    (piece1.getType() == PieceType.SCISSORS && piece2.getType() == PieceType.ROCK)){
+                if ((piece1.getRank() == Rank.THREE && piece2.getRank() == Rank.ONE) ||
+                        (piece1.getRank() == Rank.FOUR && piece2.getRank() == Rank.TWO) ||
+                        (piece1.getRank() == Rank.FIVE && piece2.getRank() == Rank.THREE)) {
+                    return new Result(Compare.TIE, piece1, piece2);
+                } else if (piece1.getRank() == Rank.ONE || piece1.getRank() == Rank.TWO || piece1.getRank() == Rank.THREE ||
+                        (piece1.getRank() == Rank.FOUR && piece2.getRank() != Rank.ONE) ||
+                        (piece1.getRank() == Rank.FIVE && piece2.getRank() != Rank.ONE && piece2.getRank() != Rank.TWO)){
+                    return new Result(Compare.LOSS, piece1, null);
+                }
+                return new Result(Compare.WIN, null, piece2);
+            } else {
+                if ((piece2.getRank() == Rank.THREE && piece1.getRank() == Rank.ONE) ||
+                        (piece2.getRank() == Rank.FOUR && piece1.getRank() == Rank.TWO) ||
+                        (piece2.getRank() == Rank.FIVE && piece1.getRank() == Rank.THREE)) {
+                    return new Result(Compare.TIE, piece1, piece2);
+                } else if (piece2.getRank() == Rank.ONE || piece2.getRank() == Rank.TWO || piece2.getRank() == Rank.THREE ||
+                        (piece2.getRank() == Rank.FOUR && piece1.getRank() != Rank.ONE) ||
+                        (piece2.getRank() == Rank.FIVE && piece1.getRank() != Rank.ONE && piece1.getRank() != Rank.TWO)){
+                    return new Result(Compare.WIN, null, piece2);
+                }
+                return new Result(Compare.LOSS, piece1, null);
+            }
+        }
+
+        Piece piece1 = getPiece(loc1);
+        if (!getPiece(loc1).getIsMine()){
+            piece1 = getPiece(loc2);
+        }
+        return comparer.compare(piece1);
     }
 
-    private Compare runFairPlay(int myX, int myY, int theirX, int theirY){
-        return Compare.TIE; //TODO do Fairplay here to determine win
+    private Result compare(int myX, int myY, int theirX, int theirY) throws IOException {
+        Location loc1 = new Location(myX, myY);
+        Location loc2 = new Location(theirX, theirY);
+        return compare(loc1, loc2);
     }
 
     private Move makeMove(Location loc, Direction direction){
         if (getPiece(loc) == null || !getPiece(loc).canMove()){
             return null;
         }
-        Location end = new Location(loc.getX() + direction.getX(), loc.getY() + direction.getY());
+        Location end = loc.add(direction);
         if (!inBoard(end)){
             return null;
         }
-        return new Move(loc, end);
+        return new Move(loc, direction);
     }
 
     public synchronized boolean makeMyMove(Location loc, Direction direction){
@@ -162,23 +234,25 @@ public class Board {
     }
 
     public synchronized boolean makeMyMove(int x, int y, Direction direction) {
-        if (myMove != null) {
-            return false;
+        synchronized (myMoveLock) {
+            if (myMove != null) {
+                return false;
+            }
+            Location loc = new Location(x, y);
+            Move result = makeMove(loc, direction);
+            if (result == null) {
+                return false;
+            }
+            if (getPiece(result.getStart()) == null || !getPiece(result.getStart()).getIsMine()) {
+                return false;
+            } else if (getPiece(result.getEnd()) != null && getPiece(result.getEnd()).getIsMine()) {
+                // Cannot move onto your own piece
+                return false;
+            }
+            myMove = result;
+            myMoveLock.notifyAll();
+            return true;
         }
-        Location loc = new Location(x, y);
-        Move result = makeMove(loc, direction);
-        if (result == null){
-            return false;
-        }
-        if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getType().equals(PieceType.UNKNOWN)){
-            return false;
-        }
-        else if (getPiece(result.getEnd()) != null && !getPiece(result.getEnd()).getType().equals(PieceType.UNKNOWN)){
-            // Cannot move onto your own piece
-            return false;
-        }
-        myMove = result;
-        return true;
     }
 
     public synchronized boolean makeTheirMove(Location loc, Direction direction){
@@ -186,30 +260,94 @@ public class Board {
     }
 
     public synchronized boolean makeTheirMove(int x, int y, Direction direction){
-        if (theirMove != null) {
-            return false;
+        synchronized (theirMoveLock) {
+            if (theirMove != null) {
+                return false;
+            }
+            Location loc = new Location(x, y);
+            Move result = makeMove(loc, direction);
+            if (result == null) {
+                return false;
+            }
+            if (getPiece(result.getStart()) == null || getPiece(result.getStart()).getIsMine()) {
+                return false;
+            } else if (getPiece(result.getEnd()) != null && !getPiece(result.getEnd()).getIsMine()) {
+                // Cannot move onto your own piece
+                return false;
+            }
+            theirMove = result;
+            theirMoveLock.notifyAll();
+            return true;
         }
-        Location loc = new Location(x, y);
-        Move result = makeMove(loc, direction);
-        if (result == null){
-            return false;
-        }
-        if (getPiece(result.getStart()) == null || !getPiece(result.getStart()).getType().equals(PieceType.UNKNOWN)){
-            return false;
-        }
-        else if (getPiece(result.getEnd()) != null && getPiece(result.getEnd()).getType().equals(PieceType.UNKNOWN)){
-            // Cannot move onto your own piece
-            return false;
-        }
-        theirMove = result;
-        return true;
     }
 
-    public List<Round> getRounds(){
-        return Collections.unmodifiableList(rounds);
+    public int getWidth() {
+        return width;
     }
 
-    public Move getMyMove(){
-        return myMove;
+    public int getHeight() {
+        return height;
+    }
+
+    public synchronized List<Round> getRounds(){
+        return new ArrayList<>(rounds);
+    }
+
+    public synchronized Round getLastRound() {
+        return rounds.get(rounds.size() - 1);
+    }
+
+    public Move awaitMyMove() throws InterruptedException {
+        synchronized (myMoveLock) {
+            while (myMove == null) {
+                myMoveLock.wait();
+            }
+            return myMove;
+        }
+    }
+
+    public Move awaitTheirMove() throws InterruptedException {
+        synchronized (theirMoveLock) {
+            while (theirMove == null) {
+                theirMoveLock.wait();
+            }
+            return theirMove;
+        }
+    }
+
+    public synchronized VerificationResult getVerificationResult() {
+        synchronized (vResultLock) {
+            return verificationResult;
+        }
+    }
+
+    public synchronized void setVerificationResult(VerificationResult verificationResult) {
+        synchronized (vResultLock) {
+            this.verificationResult = verificationResult;
+            vResultLock.notifyAll();
+        }
+    }
+
+    public synchronized VerificationResult awaitVerificationResult() throws InterruptedException {
+        synchronized (vResultLock) {
+            while (verificationResult == null) {
+                vResultLock.wait();
+            }
+            return verificationResult;
+        }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        for (Piece[] row : board) {
+            for (Piece p : row) {
+                builder.append(p);
+                builder.append(" ");
+            }
+            builder.append("\n");
+        }
+        return builder.toString();
     }
 }
