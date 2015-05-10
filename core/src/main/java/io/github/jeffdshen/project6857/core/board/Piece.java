@@ -44,6 +44,7 @@ public class Piece {
         return type + "," + rank + "," + isMine;
     }
 
+    @Override
     public int hashCode(){
         int hash = 7;
         hash = 71 * hash + this.type.hashCode();

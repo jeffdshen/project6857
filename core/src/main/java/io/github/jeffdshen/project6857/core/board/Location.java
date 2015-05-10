@@ -24,6 +24,7 @@ public class Location {
         return new Location(x + d.getX(), y + d.getY());
     }
 
+    @Override
     public boolean equals(Object other){
         if (other == null || other.getClass() != this.getClass()){
             return false;
@@ -33,6 +34,7 @@ public class Location {
         return this.x == that.x && this.y == that.y;
     }
 
+    @Override
     public int hashCode(){
         int hash = 7;
         hash = 71 * hash + this.x;

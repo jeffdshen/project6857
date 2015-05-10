@@ -46,6 +46,7 @@ public class Result {
             && Objects.equals(this.theirPiece, that.theirPiece));
     }
 
+    @Override
     public int hashCode(){
         int hash = 7;
         hash = 71 * hash + Objects.hashCode(compare);
