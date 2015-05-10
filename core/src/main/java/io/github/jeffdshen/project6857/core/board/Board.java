@@ -147,9 +147,9 @@ public class Board {
                 piece2 = getPiece(loc1);
             }
             if (piece1.getType() == PieceType.FLAG){
-                return new Result(Compare.GAMELOSS, piece1, piece2);
+                return new Result(Compare.GAMELOSS, piece1, null);
             } else if (piece2.getType() == PieceType.FLAG){
-                return new Result(Compare.GAMEWIN, piece1, piece2);
+                return new Result(Compare.GAMEWIN, null, piece2);
             } else if (piece1.getType() == piece2.getType()){
                 if (piece1.getRank() == piece2.getRank()){
                     return new Result(Compare.TIE, piece1, piece2);
@@ -158,7 +158,7 @@ public class Board {
                         (piece1.getRank() == Rank.THREE && piece2.getRank() != Rank.ONE && piece2.getRank() != Rank.TWO) ||
                         (piece1.getRank() == Rank.FOUR && (piece2.getRank() == Rank.FIVE || piece2.getRank() == Rank.BOMB)) ||
                         (piece1.getRank() == Rank.FIVE && piece2.getRank() == Rank.BOMB)){
-                    return new Result(Compare.LOSS, piece1, piece2);
+                    return new Result(Compare.LOSS, piece1, null);
                 }
                 return new Result(Compare.WIN, piece1, piece2);
             } else if ((piece1.getType() == PieceType.ROCK && piece2.getType() == PieceType.PAPER) ||
@@ -171,9 +171,9 @@ public class Board {
                 } else if (piece1.getRank() == Rank.ONE || piece1.getRank() == Rank.TWO || piece1.getRank() == Rank.THREE ||
                         (piece1.getRank() == Rank.FOUR && piece2.getRank() != Rank.ONE) ||
                         (piece1.getRank() == Rank.FIVE && piece2.getRank() != Rank.ONE && piece2.getRank() != Rank.TWO)){
-                    return new Result(Compare.LOSS, piece1, piece2);
+                    return new Result(Compare.LOSS, piece1, null);
                 }
-                return new Result(Compare.WIN, piece1, piece2);
+                return new Result(Compare.WIN, null, piece2);
             } else {
                 if ((piece2.getRank() == Rank.THREE && piece1.getRank() == Rank.ONE) ||
                         (piece2.getRank() == Rank.FOUR && piece1.getRank() == Rank.TWO) ||
@@ -182,9 +182,9 @@ public class Board {
                 } else if (piece2.getRank() == Rank.ONE || piece2.getRank() == Rank.TWO || piece2.getRank() == Rank.THREE ||
                         (piece2.getRank() == Rank.FOUR && piece1.getRank() != Rank.ONE) ||
                         (piece2.getRank() == Rank.FIVE && piece1.getRank() != Rank.ONE && piece1.getRank() != Rank.TWO)){
-                    return new Result(Compare.WIN, piece1, piece2);
+                    return new Result(Compare.WIN, null, piece2);
                 }
-                return new Result(Compare.LOSS, piece1, piece2);
+                return new Result(Compare.LOSS, piece1, null);
             }
         }
         return null; //TODO do Fairplay here to determine win
