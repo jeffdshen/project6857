@@ -8,7 +8,7 @@ public class GameMainDesktop {
 	public static void main (String[] args) {
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
         config.width = 900;
-        config.height = 600;
+        config.height = 660;
 		new LwjglApplication(new GameMain(), config);
 	}
 }
