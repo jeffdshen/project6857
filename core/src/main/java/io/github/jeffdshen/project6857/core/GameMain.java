@@ -24,7 +24,6 @@ public class GameMain extends Game {
     @Override
 	public void create () {
         initScreen = new InitScreen(this, stageWidth, stageHeight, tileSize, borderSize, boardWidth, boardHeight, playerHeight);
-        //playscreen?
         setScreen(initScreen);
     }
 

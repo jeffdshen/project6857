@@ -8,16 +8,17 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import io.github.jeffdshen.project6857.core.board.Board;
-import io.github.jeffdshen.project6857.core.board.Piece;
-import io.github.jeffdshen.project6857.core.board.PieceType;
-import io.github.jeffdshen.project6857.core.board.Rank;
+import io.github.jeffdshen.project6857.core.board.*;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,9 +43,13 @@ public class PlayScreen implements Screen{
     DragAndDrop dragDrop;
     Stage stage;
     Actor sidebar;
+    Actor[][] tileArray;
     TextButton.TextButtonStyle buttonStyle;
+    public static Map<DragAndDrop.Source, Piece> sourceMap = new HashMap<>();
+    private Object targetLock = new Object();
 
     Board board;
+    Round lastRound;
 
     private static final Map<Rank,String> rankMap = Collections.unmodifiableMap(
             new HashMap<Rank, String>() {{
@@ -74,6 +79,8 @@ public class PlayScreen implements Screen{
 
         //set board
         this.board = board;
+        //TODO: check zero case
+        this.lastRound = board.getLastRound();
 
         // set boundary variables
         this.stageWidth = stageWidth;
@@ -124,39 +131,19 @@ public class PlayScreen implements Screen{
     }
 
     private void tileStage() {
-        for (int x = 0; x < boardWidth; x++) {
-            for (int y = 0; y < boardHeight; y++) {
+        tileArray = new Actor [boardWidth][boardHeight];
+        Table tileTable = new Table();
+        tileTable.setBounds(0, 0, boardWidth * tileSize, boardHeight * tileSize);
+        for (int y = 0; y < boardHeight; y++) {
+            for (int x = 0; x < boardWidth; x++) {
                 Image tile = new Image(new Texture(Gdx.files.internal("tile.png")));
-                tile.setBounds(tileSize * x, tileSize * y, tileSize, tileSize);
-                stage.addActor(tile);
-
-                dragDrop.addTarget(new DragAndDrop.Target(tile) {
-                    public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                        return true;
-                    }
-
-                    public void reset(DragAndDrop.Source source, DragAndDrop.Payload payload) {
-                    }
-
-                    public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                        /*Actor currentTile = getActor();
-                        Piece piece = sourceMap.get(source);
-                        int xPos = (int) currentTile.getX();
-                        int yPos = (int) currentTile.getY();
-
-                        if (initBoard.setPiece(xPos/tileSize, yPos/tileSize, piece)) {
-                            source.getActor().setPosition(xPos + borderSize, yPos + borderSize);
-                        }
-
-                        if (initBoard.noRemainingPieces()) {
-                            startGameButton.setDisabled(false);
-                            randomBoardButton.setDisabled(true);
-                        }*/
-                    }
-                });
-
+                tile.setSize(tileSize, tileSize);
+                tileTable.add(tile);
+                tileArray[x][boardHeight-y-1] = tile;
             }
+            tileTable.row();
         }
+        stage.addActor(tileTable);
     }
 
     private void placePieces() {
@@ -164,13 +151,124 @@ public class PlayScreen implements Screen{
             for (int ypos = 0; ypos < boardHeight; ypos++) {
                 Piece piece = board.getPiece(xpos, ypos);
                 if (piece != null) {
+                    Rank rank = piece.getRank();
+
                     Image coin = new Image(new Texture(Gdx.files.internal(rankMap.get(piece.getRank()))));
                     coin.setColor(typeMap.get(piece.getType()));
                     int coinSize = tileSize - (2 * borderSize);
                     coin.setBounds((tileSize * xpos) + borderSize, (tileSize * ypos) + borderSize, coinSize, coinSize);
                     stage.addActor(coin);
+
+                    if (rank != Rank.UNKNOWN && rank != Rank.FLAG && rank != Rank.BOMB) {
+                        DragAndDrop.Source source = createPieceSource(coin);
+                        sourceMap.put(source, piece);
+                        dragDrop.addSource(source);
+                    }
                 }
             }
+        }
+    }
+
+    private DragAndDrop.Source createPieceSource(Actor coin) {
+        final DragAndDrop.Source source = new DragAndDrop.Source(coin) {
+            private ArrayList<DragAndDrop.Target> validTargets;
+            private Location startLoc;
+
+            public DragAndDrop.Payload dragStart(InputEvent event, float x, float y, int pointer) {
+
+                DragAndDrop.Payload payload = new DragAndDrop.Payload();
+                Actor currentCoin = getActor();
+                currentCoin.setVisible(false);
+
+                int xpos = (int) ((currentCoin.getX() - borderSize)/tileSize);
+                int ypos = (int) ((currentCoin.getY() - borderSize)/tileSize);
+                startLoc = new Location(xpos, ypos);
+
+                validTargets = new ArrayList<>();
+                synchronized (targetLock) {
+                    getValidTargets(startLoc, validTargets);
+                }
+
+                Image dragCoin = new Image(((Image) currentCoin).getDrawable());
+                dragCoin.setColor(currentCoin.getColor());
+                dragCoin.setSize(currentCoin.getHeight(), currentCoin.getWidth());
+
+                payload.setDragActor(dragCoin);
+                dragDrop.setDragActorPosition(-(dragCoin.getWidth() / 2), dragCoin.getHeight() / 2);
+                return payload;
+            }
+
+            @Override
+            public void dragStop(InputEvent event, float x, float y, int pointer, DragAndDrop.Payload payload, DragAndDrop.Target target) {
+                this.getActor().setVisible(true);
+                synchronized (targetLock) {
+                    for (DragAndDrop.Target oldTarget : validTargets) {
+                        dragDrop.removeTarget(oldTarget);
+                    }
+                }
+            }
+
+            private void getValidTargets(final Location startLoc, ArrayList<DragAndDrop.Target> validTargets) {
+                for (final Direction dir: new Direction[] {Direction.FORWARD,Direction.RIGHT, Direction.BACKWARD, Direction.LEFT}){
+                    Location possibleLoc = startLoc.add(dir);
+                    if (board.inBoard(possibleLoc)) {
+                        Actor possibleTile = tileArray[possibleLoc.getX()][possibleLoc.getY()];
+                        DragAndDrop.Target target = new DragAndDrop.Target(possibleTile) {
+                            Direction toHere = dir;
+                            Location start = startLoc;
+
+                            public boolean drag(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                                return true;
+                            }
+
+                            public void reset(DragAndDrop.Source source, DragAndDrop.Payload payload) {
+                            }
+
+                            public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
+                                synchronized (targetLock) {
+                                    Actor currentTile = getActor();
+                                    Piece piece = sourceMap.get(source);
+                                    int xPos = (int) currentTile.getX();
+                                    int yPos = (int) currentTile.getY();
+
+                                    stage.unfocusAll();
+                                    board.makeMyMove(startLoc, dir);
+                                    while(board.getLastRound().equals(lastRound)) {
+                                        // just keep swimming
+                                        // possibly some sort of loading indicator
+                                    }
+                                    updateBoard(source);
+                                }
+                            }
+                        };
+                        validTargets.add(target);
+                        dragDrop.addTarget(target);
+                    }
+                }
+            }
+        };
+
+        return source;
+    }
+
+    private void updateBoard(DragAndDrop.Source source) {
+        lastRound = board.getLastRound();
+        // dissect lastRound to update the board
+        if (lastRound.getMyStatus().getCompare() == Compare.WIN){
+            // source.getActor().setPosition(xPos + borderSize, yPos + borderSize);
+            // ^^^ use lastround.getmymove to know where to move to
+            // delete any actors underneath you??? oh no ;_;
+        } else if (lastRound.getMyStatus().getCompare() == Compare.LOSS ||
+                lastRound.getMyStatus().getCompare() == Compare.TIE) {
+            source.getActor().remove();
+        }
+
+        if (lastRound.getTheirStatus().getCompare() == Compare.WIN) {
+            // get the enemy piece and move it pls
+            // delete any actors underneath it
+        } else if (lastRound.getMyStatus().getCompare() == Compare.LOSS ||
+                lastRound.getMyStatus().getCompare() == Compare.TIE) {
+            // get the enemy piece and remove it
         }
     }
 

@@ -32,7 +32,7 @@ public class Result {
     }
 
     public Piece getTheirPiece() {
-        return yourPiece;
+        return theirPiece;
     }
 
     @Override

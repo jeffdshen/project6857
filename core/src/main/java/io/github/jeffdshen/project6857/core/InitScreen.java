@@ -410,16 +410,12 @@ public class InitScreen implements Screen {
     private void startPlay() {
         // ask for an IP
         String serverIp = ip.getText();
-        if (serverIp.equals("")) {
-            // assume you are server
-            isServer = true;
+        if (isServer) {
             try {
                 serverIp = InetAddress.getLocalHost().getHostAddress();
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
-        } else {
-            isServer = false;
         }
 
         // set up Fairplay
@@ -463,15 +459,13 @@ public class InitScreen implements Screen {
             game.setPlayScreen(playScreen);
             game.setScreen(playScreen);
 
+            // create new thread with connection as a runnable
             Thread thread = new Thread(connection);
             thread.start();
 
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        //create new thread with connection as a runnable
-        //start thread
     }
 
     @Override
