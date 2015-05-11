@@ -294,6 +294,9 @@ public class Board {
     }
 
     public synchronized Round getLastRound() {
+        if (rounds.size() == 0){
+            return null;
+        }
         return rounds.get(rounds.size() - 1);
     }
 
