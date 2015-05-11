@@ -23,9 +23,10 @@ public class Connection implements Runnable, PieceComparer {
 
     private Commitment myInitBoard;
     private Commitment theirInitBoard;
+    private CommitmentProvider provider;
 
     public Connection(
-        Socket socket, Piece[][] initBoard, int playerHeight, FairplayComparer fairplay
+        Socket socket, Piece[][] initBoard, int playerHeight, FairplayComparer fairplay, String id
     ) throws IOException {
         this.socket = socket;
         this.initBoard = initBoard;
@@ -35,6 +36,7 @@ public class Connection implements Runnable, PieceComparer {
                 socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(),
                 true);
+        provider = Commitment.getCommitmentProvider(id);
     }
 
     public void setBoard(Board board) {
@@ -44,10 +46,10 @@ public class Connection implements Runnable, PieceComparer {
     private void exchangeInitBoard() throws IOException {
         System.out.println("exchanging boards...");
         String s = EncodingProtocol.encodeBoard(initBoard);
-        myInitBoard = Commitment.makeCommitment(s);
+        myInitBoard = provider.makeCommitment(s);
         out.println(myInitBoard.getHash());
         String hash = in.readLine();
-        theirInitBoard = Commitment.getCommitment(hash);
+        theirInitBoard = provider.getCommitment(hash);
         System.out.println("commitment received");
     }
 
@@ -133,10 +135,10 @@ public class Connection implements Runnable, PieceComparer {
             System.out.println("exchanging moves");
             Move myMove = board.awaitMyMove();
             System.out.println("got my move");
-            Commitment myCommit = Commitment.makeCommitment(EncodingProtocol.encodeMove(myMove));
+            Commitment myCommit = provider.makeCommitment(EncodingProtocol.encodeMove(myMove));
             out.println(myCommit.getHash());
             String hash = in.readLine();
-            Commitment theirCommit = Commitment.getCommitment(hash);
+            Commitment theirCommit = provider.getCommitment(hash);
 
             out.println(myCommit.getSecret());
             String secret = in.readLine();

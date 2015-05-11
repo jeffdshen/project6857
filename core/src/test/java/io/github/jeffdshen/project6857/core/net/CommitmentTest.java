@@ -9,11 +9,15 @@ public class CommitmentTest {
     @Test
     public void testCommitment() throws Exception {
         String data = "hello world";
-        Commitment send = Commitment.makeCommitment(data);
-        Commitment recv = Commitment.getCommitment(send.getHash());
+        String id = "S";
+        CommitmentProvider provider = Commitment.getCommitmentProvider(id);
+        Commitment send = provider.makeCommitment(data);
+        Commitment recv = provider.getCommitment(send.getHash());
         assertTrue(recv.update(send.getSecret()));
-        assertEquals(data, send.getData());
-        assertEquals(data, recv.getData());
+        assertEquals(send.getData(), data);
+        assertEquals(recv.getData(), data);
+        assertEquals(send.getId(), id);
+        assertEquals(recv.getId(), id);
         assertEquals(send.getNonce(), recv.getNonce());
         assertEquals(send.getHash(), recv.getHash());
     }
