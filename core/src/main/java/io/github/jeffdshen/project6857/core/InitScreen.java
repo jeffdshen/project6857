@@ -11,14 +11,18 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.jeffdshen.project6857.core.board.*;
+import io.github.jeffdshen.project6857.core.net.*;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.*;
 
 /**
@@ -35,6 +39,8 @@ public class InitScreen implements Screen {
 
     Map<Piece, Integer> defaultPieces;
     InitBoard initBoard;
+    final Skin uiSkin = new Skin(Gdx.files.internal("skin/uiskin.json"));
+    Table dialogTable;
 
     private static final Map<Rank,String> rankMap = Collections.unmodifiableMap(
             new HashMap<Rank, String>() {{
@@ -71,6 +77,9 @@ public class InitScreen implements Screen {
 
     TextButton startGameButton;
     TextButton randomBoardButton;
+    TextField ip;
+
+    boolean isServer;
 
     // constructor
     public InitScreen(GameMain game, int stageWidth, int stageHeight, int tileSize, int borderSize, int boardWidth, int boardHeight, int playerHeight){
@@ -89,6 +98,7 @@ public class InitScreen implements Screen {
         dragDrop = new DragAndDrop();
         font = new BitmapFont();
         font.setScale(2);
+        dialogTable = new Table();
 
         stage = new Stage(new FitViewport(stageWidth, stageHeight));
         Gdx.input.setInputProcessor(stage);
@@ -106,8 +116,7 @@ public class InitScreen implements Screen {
         pixmap.setColor(new Color(0.015f, 0.217f, 0.225f, 1f)); //4, 55, 58
         pixmap.fill();
         Image topbar = new Image(new Texture(pixmap));
-        topbar.setBounds(0, boardHeight * tileSize, stageWidth, stageHeight - (boardHeight*tileSize));
-        pixmap.dispose();
+        topbar.setBounds(0, boardHeight * tileSize, stageWidth, stageHeight - (boardHeight * tileSize));
         stage.addActor(topbar);
 
         // fill topbar with text and buttons
@@ -302,7 +311,7 @@ public class InitScreen implements Screen {
         startGameButton.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                createPlayBoard();
+                if (initBoard.noRemainingPieces()) chooseRole();
             }
         });
 
@@ -325,7 +334,7 @@ public class InitScreen implements Screen {
             final Piece piece = entry.getKey();
             int occurrence = entry.getValue();
             for (int q = 0; q < occurrence; q++) {
-                if (initBoard.setPiece(x, y, piece)) {
+                while (!initBoard.setPiece(x, y, piece)) {
                     if (x < 9) {
                         x++;
                     } else {
@@ -335,31 +344,134 @@ public class InitScreen implements Screen {
                 }
             }
         }
-        createPlayBoard();
+        if (initBoard.noRemainingPieces()) chooseRole();
     }
 
-    private void printBoard() {
-        Piece[][] pBoard = initBoard.getBoard();
-        for (Piece[] row : pBoard) {
-            for (Piece piece : row) {
-                if (piece == null) {
-                    System.out.print("null null | ");
-                } else {
-                    System.out.print(piece.getRank() + " " + piece.getType() + " | ");
-                }
+    private void chooseRole() {
+        // create pixmap and background
+        Pixmap pixmap = new Pixmap(stageWidth, stageHeight - (boardHeight*tileSize), Pixmap.Format.RGBA8888);
+        pixmap.setColor(new Color(0.015f, 0.217f, 0.225f, 1f)); //4, 55, 58
+        pixmap.fill();
+        TextureRegionDrawable background = new TextureRegionDrawable(new TextureRegion(
+                new Texture(pixmap)));
+
+        // create buttons
+        TextButton clientButton = new TextButton("Client", buttonStyle);
+        clientButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                isServer = false;
+                getIP();
             }
-            System.out.println();
+        });
+        TextButton serverButton = new TextButton("Server", buttonStyle);
+        serverButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                isServer = true;
+                getIP();
+            }
+        });
+
+        // create dialog (as a table object)
+        dialogTable.setBackground(background);
+        dialogTable.setBounds(stageWidth * 3 / 8, stageHeight * 3 / 8, stageWidth / 4, stageHeight / 4);
+        dialogTable.add(new Label("Choose a role:", uiSkin));
+        dialogTable.row();
+        dialogTable.add(clientButton).size(dialogTable.getWidth()/3, 60).pad(20, 10, 20, 10);
+        dialogTable.add(serverButton).size(dialogTable.getWidth()/3, 60).pad(20, 10, 20, 10);
+
+        stage.addActor(dialogTable);
+    }
+
+    private void getIP() {
+        ip = new TextField("", uiSkin);
+        if (isServer) {
+            startPlay();
+        } else {
+            TextButton submitIpButton = new TextButton("Submit", buttonStyle);
+            submitIpButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    if (!ip.getText().equals("")) {
+                        startPlay();
+                    }
+                }
+            });
+
+            dialogTable.clearChildren();
+            dialogTable.debug();
+            dialogTable.add(new Label("Enter Server IP:", uiSkin)).row();
+            dialogTable.add(ip).width(100).row();
+            dialogTable.add(submitIpButton).size(dialogTable.getWidth() / 3, 60).pad(20, 10, 20, 10);
         }
     }
 
-    private void createPlayBoard() {
-        if (initBoard.noRemainingPieces()) {
-            System.out.println("ready");
-            Board board =  new Board(initBoard.getBoard());
+    private void startPlay() {
+        // ask for an IP
+        String serverIp = ip.getText();
+        if (serverIp.equals("")) {
+            // assume you are server
+            isServer = true;
+            try {
+                serverIp = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+        } else {
+            isServer = false;
+        }
+
+        // set up Fairplay
+        Fairplay alice;
+        Fairplay bob;
+        FairplayAlternator fairplayAlternator;
+        Socket socket = null;
+        if (isServer) {
+            // you are bob
+            bob = new Fairplay();
+            alice = new Fairplay(serverIp);
+            fairplayAlternator = new FairplayAlternator(alice, bob, false);
+            Server server = new Server(1234);
+            try {
+                server.connect();
+                socket = server.socket;
+            } catch (IOException e){
+                e.printStackTrace();
+            }
+        } else {
+            // you are alice
+            alice = new Fairplay();
+            bob = new Fairplay(serverIp);
+            fairplayAlternator = new FairplayAlternator(alice, bob, true);
+            Client client = new Client(serverIp, 1234);
+            try {
+                client.connect();
+                socket = client.socket;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // create connection and playsceen
+        try {
+            Connection connection = new Connection(socket, initBoard.getBoard(), playerHeight, fairplayAlternator);
+            Board board = new Board(initBoard.getBoard(), connection);
+            connection.setBoard(board);
+
             PlayScreen playScreen = new PlayScreen(game, stageWidth, stageHeight, tileSize, borderSize, boardWidth, boardHeight, playerHeight, board);
             game.setPlayScreen(playScreen);
             game.setScreen(playScreen);
+
+            Thread thread = new Thread(connection);
+            thread.start();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        //create new thread with connection as a runnable
+        //start thread
     }
 
     @Override
