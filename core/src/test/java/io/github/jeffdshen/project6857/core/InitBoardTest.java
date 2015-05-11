@@ -14,7 +14,7 @@ public class InitBoardTest {
     @Test
     public void testGet(){
         InitBoard board = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
-        assertEquals(board.getPiece(6, 6), new Piece(PieceType.UNKNOWN, Rank.UNKNOWN, true));
+        assertEquals(board.getPiece(6, 6), new Piece(PieceType.UNKNOWN, Rank.UNKNOWN, false));
         assertNull(board.getPiece(0, 0));
         assertNull(board.getPiece(11, 11));
 

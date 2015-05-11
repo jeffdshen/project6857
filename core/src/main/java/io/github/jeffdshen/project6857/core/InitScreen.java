@@ -451,7 +451,8 @@ public class InitScreen implements Screen {
 
         // create connection and playsceen
         try {
-            Connection connection = new Connection(socket, initBoard.getBoard(), playerHeight, fairplayAlternator);
+            String id = isServer ? "S" : "C";
+            Connection connection = new Connection(socket, initBoard.getBoard(), playerHeight, fairplayAlternator, id);
             Board board = new Board(initBoard.getBoard(), connection);
             connection.setBoard(board);
 
