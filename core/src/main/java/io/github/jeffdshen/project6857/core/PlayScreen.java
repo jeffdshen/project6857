@@ -18,10 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.jeffdshen.project6857.core.board.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by Shruthi on 5/10/2015.
@@ -44,6 +41,7 @@ public class PlayScreen implements Screen{
     Stage stage;
     Actor sidebar;
     Actor[][] tileArray;
+    Actor[][] pieceArray;
     TextButton.TextButtonStyle buttonStyle;
     public static Map<DragAndDrop.Source, Piece> sourceMap = new HashMap<>();
     private Object targetLock = new Object();
@@ -79,7 +77,6 @@ public class PlayScreen implements Screen{
 
         //set board
         this.board = board;
-        //TODO: check zero case
         this.lastRound = board.getLastRound();
 
         // set boundary variables
@@ -147,6 +144,7 @@ public class PlayScreen implements Screen{
     }
 
     private void placePieces() {
+        pieceArray = new Actor [boardWidth][boardHeight];
         for (int xpos = 0; xpos < boardWidth; xpos++) {
             for (int ypos = 0; ypos < boardHeight; ypos++) {
                 Piece piece = board.getPiece(xpos, ypos);
@@ -158,6 +156,7 @@ public class PlayScreen implements Screen{
                     int coinSize = tileSize - (2 * borderSize);
                     coin.setBounds((tileSize * xpos) + borderSize, (tileSize * ypos) + borderSize, coinSize, coinSize);
                     stage.addActor(coin);
+                    pieceArray[xpos][boardHeight-ypos-1] = coin;
 
                     if (rank != Rank.UNKNOWN && rank != Rank.FLAG && rank != Rank.BOMB) {
                         DragAndDrop.Source source = createPieceSource(coin);
@@ -185,9 +184,9 @@ public class PlayScreen implements Screen{
                 startLoc = new Location(xpos, ypos);
 
                 validTargets = new ArrayList<>();
-                synchronized (targetLock) {
+                //synchronized (targetLock) {
                     getValidTargets(startLoc, validTargets);
-                }
+                //}
 
                 Image dragCoin = new Image(((Image) currentCoin).getDrawable());
                 dragCoin.setColor(currentCoin.getColor());
@@ -201,11 +200,11 @@ public class PlayScreen implements Screen{
             @Override
             public void dragStop(InputEvent event, float x, float y, int pointer, DragAndDrop.Payload payload, DragAndDrop.Target target) {
                 this.getActor().setVisible(true);
-                synchronized (targetLock) {
+                //synchronized (targetLock) {
                     for (DragAndDrop.Target oldTarget : validTargets) {
                         dragDrop.removeTarget(oldTarget);
                     }
-                }
+                //}
             }
 
             private void getValidTargets(final Location startLoc, ArrayList<DragAndDrop.Target> validTargets) {
@@ -225,20 +224,24 @@ public class PlayScreen implements Screen{
                             }
 
                             public void drop(DragAndDrop.Source source, DragAndDrop.Payload payload, float x, float y, int pointer) {
-                                synchronized (targetLock) {
+                                //synchronized (targetLock) {
                                     Actor currentTile = getActor();
                                     Piece piece = sourceMap.get(source);
                                     int xPos = (int) currentTile.getX();
                                     int yPos = (int) currentTile.getY();
 
-                                    stage.unfocusAll();
                                     board.makeMyMove(startLoc, dir);
-                                    while(board.getLastRound().equals(lastRound)) {
+                                    while(Objects.equals(board.getLastRound(), lastRound)) {
                                         // just keep swimming
                                         // possibly some sort of loading indicator
+                                        VerificationResult verificationResult = board.getVerificationResult();
+                                        if (verificationResult != null) {
+                                            System.out.println(verificationResult.getMessage());
+                                            verificationResult.getException().printStackTrace();
+                                        }
                                     }
                                     updateBoard(source);
-                                }
+                                //}
                             }
                         };
                         validTargets.add(target);
@@ -252,24 +255,78 @@ public class PlayScreen implements Screen{
     }
 
     private void updateBoard(DragAndDrop.Source source) {
-        lastRound = board.getLastRound();
         // dissect lastRound to update the board
+        lastRound = board.getLastRound();
+
+        // you won your move
         if (lastRound.getMyStatus().getCompare() == Compare.WIN){
-            // source.getActor().setPosition(xPos + borderSize, yPos + borderSize);
-            // ^^^ use lastround.getmymove to know where to move to
-            // delete any actors underneath you??? oh no ;_;
+            Location start = lastRound.getMyMove().getStart();
+            Location end = lastRound.getMyMove().getEnd();
+
+            // move winning coin on board
+            Actor myCoin = pieceArray[start.getX()][flip(start.getY())];
+            myCoin.setPosition((end.getX()*tileSize) + borderSize, (end.getY()*tileSize) + borderSize);
+
+            // kill losing coin
+            if (pieceArray[end.getX()][flip(end.getY())] != null) {
+                Actor theirCoin = pieceArray[end.getX()][flip(end.getY())];
+                theirCoin.remove();
+            }
+
+            // register winning coin in array
+            pieceArray[start.getX()][flip(start.getY())] = null;
+            pieceArray[end.getX()][flip(end.getY())] = myCoin;
+
+        // you lost your move
         } else if (lastRound.getMyStatus().getCompare() == Compare.LOSS ||
                 lastRound.getMyStatus().getCompare() == Compare.TIE) {
+            // clear your piece
+            Location start = lastRound.getMyMove().getStart();
+            pieceArray[start.getX()][flip(start.getY())] = null;
             source.getActor().remove();
+
+            // clear their piece
+            Location end = lastRound.getMyMove().getEnd();
+            pieceArray[end.getX()][flip(end.getY())].remove();
+            pieceArray[end.getX()][flip(end.getY())] = null;
         }
 
+        // they won their move
         if (lastRound.getTheirStatus().getCompare() == Compare.WIN) {
-            // get the enemy piece and move it pls
-            // delete any actors underneath it
+            Location start = lastRound.getTheirMove().getStart();
+            Location end = lastRound.getTheirMove().getEnd();
+
+            // move winning coin on board
+            Actor myCoin = pieceArray[start.getX()][flip(start.getY())];
+            myCoin.setPosition((end.getX()*tileSize) + borderSize, (end.getY()*tileSize) + borderSize);
+
+            // kill losing coin
+            if (pieceArray[end.getX()][flip(end.getY())] != null) {
+                Actor theirCoin = pieceArray[end.getX()][flip(end.getY())];
+                theirCoin.remove();
+            }
+
+            // register winning coin in array
+            pieceArray[start.getX()][flip(start.getY())] = null;
+            pieceArray[end.getX()][flip(end.getY())] = myCoin;
+
+        // they lost their move
         } else if (lastRound.getMyStatus().getCompare() == Compare.LOSS ||
                 lastRound.getMyStatus().getCompare() == Compare.TIE) {
-            // get the enemy piece and remove it
+            // clear your piece
+            Location start = lastRound.getTheirMove().getStart();
+            pieceArray[start.getX()][flip(start.getY())] = null;
+            source.getActor().remove();
+
+            // clear their piece
+            Location end = lastRound.getTheirMove().getEnd();
+            pieceArray[end.getX()][flip(end.getY())].remove();
+            pieceArray[end.getX()][flip(end.getY())] = null;
         }
+    }
+
+    private int flip(int y) {
+        return boardHeight - y - 1;
     }
 
     @Override

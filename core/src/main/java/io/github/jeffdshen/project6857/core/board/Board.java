@@ -54,7 +54,7 @@ public class Board {
         return result;
     }
 
-    private boolean inBoard(Location loc){
+    public boolean inBoard(Location loc){
         return inBoard(loc.getX(), loc.getY());
     }
 

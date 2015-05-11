@@ -42,11 +42,13 @@ public class Connection implements Runnable, PieceComparer {
     }
 
     private void exchangeInitBoard() throws IOException {
+        System.out.println("exchanging boards...");
         String s = EncodingProtocol.encodeBoard(initBoard);
         myInitBoard = Commitment.makeCommitment(s);
         out.println(myInitBoard.getHash());
         String hash = in.readLine();
         theirInitBoard = Commitment.getCommitment(hash);
+        System.out.println("commitment received");
     }
 
     private void verifyCondition(boolean condition) throws VerificationException {
@@ -128,7 +130,9 @@ public class Connection implements Runnable, PieceComparer {
      */
     private boolean exchangeMoves() throws IOException, VerificationException {
         try {
+            System.out.println("exchanging moves");
             Move myMove = board.awaitMyMove();
+            System.out.println("got my move");
             Commitment myCommit = Commitment.makeCommitment(EncodingProtocol.encodeMove(myMove));
             out.println(myCommit.getHash());
             String hash = in.readLine();
@@ -138,12 +142,14 @@ public class Connection implements Runnable, PieceComparer {
             String secret = in.readLine();
             verifyCondition(theirCommit.update(secret));
 
+            System.out.println("got their move");
             Move theirMove = EncodingProtocol.decodeMove(theirCommit.getData());
 
             Direction dir = theirMove.getDirection();
             verifyCondition(dir != null);
-            verifyCondition(board.makeTheirMove(board.getRotatedLocation(theirMove.getStart()), dir));
+            verifyCondition(board.makeTheirMove(board.getRotatedLocation(theirMove.getStart()), dir.getOpposite()));
 
+            System.out.println("starting round");
             return board.startRound();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -159,6 +165,7 @@ public class Connection implements Runnable, PieceComparer {
             while (!exchangeMoves()) ;
 
             verifyGame();
+            board.setVerificationResult(new VerificationResult("Verified", null));
         } catch (IOException e) {
             board.setVerificationResult(new VerificationResult("Connection error", e));
         } catch (RuntimeException e) {
@@ -166,8 +173,6 @@ public class Connection implements Runnable, PieceComparer {
         } catch (VerificationException e) {
             board.setVerificationResult(new VerificationResult("Rule violation", e));
         }
-
-        board.setVerificationResult(new VerificationResult("Verified", null));
 
         // end
         try {
