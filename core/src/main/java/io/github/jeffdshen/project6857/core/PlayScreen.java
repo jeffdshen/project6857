@@ -13,10 +13,10 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.jeffdshen.project6857.core.board.*;
+import io.github.jeffdshen.project6857.core.net.EncodingProtocol;
 
 import java.util.*;
 
@@ -238,6 +238,7 @@ public class PlayScreen implements Screen{
                                         if (verificationResult != null) {
                                             System.out.println(verificationResult.getMessage());
                                             verificationResult.getException().printStackTrace();
+                                            System.exit(1);
                                         }
                                     }
                                     updateBoard(source);
@@ -257,71 +258,80 @@ public class PlayScreen implements Screen{
     private void updateBoard(DragAndDrop.Source source) {
         // dissect lastRound to update the board
         lastRound = board.getLastRound();
+        System.out.println(EncodingProtocol.encodeMove(lastRound.getMyMove()));
+        System.out.println(EncodingProtocol.encodeMove(lastRound.getTheirMove()));
+        System.out.println(lastRound.getMyStatus().getCompare());
+        System.out.println(lastRound.getTheirStatus().getCompare());
 
-        // you won your move
-        if (lastRound.getMyStatus().getCompare() == Compare.WIN){
-            Location start = lastRound.getMyMove().getStart();
-            Location end = lastRound.getMyMove().getEnd();
+        // pull both pieces off the board
+        Location myStart = lastRound.getMyMove().getStart();
+        Location myEnd = lastRound.getMyMove().getEnd();
+        Actor myCoin = pieceArray[myStart.getX()][flip(myStart.getY())];
+        pieceArray[myStart.getX()][flip(myStart.getY())] = null;
 
-            // move winning coin on board
-            Actor myCoin = pieceArray[start.getX()][flip(start.getY())];
-            myCoin.setPosition((end.getX()*tileSize) + borderSize, (end.getY()*tileSize) + borderSize);
+        Location theirStart = lastRound.getTheirMove().getStart();
+        Location theirEnd = lastRound.getTheirMove().getEnd();
+        Actor theirCoin = pieceArray[theirStart.getX()][flip(theirStart.getY())];
+        pieceArray[theirStart.getX()][flip(theirStart.getY())] = null;
 
-            // kill losing coin
-            if (pieceArray[end.getX()][flip(end.getY())] != null) {
-                Actor theirCoin = pieceArray[end.getX()][flip(end.getY())];
-                theirCoin.remove();
-            }
+        switch (lastRound.getMyStatus().getCompare()) {
+            case WIN:
+                // place piece on board, remove any piece there if necessary.
+                myCoin.setPosition((myEnd.getX()*tileSize) + borderSize, (myEnd.getY()*tileSize) + borderSize);
 
-            // register winning coin in array
-            pieceArray[start.getX()][flip(start.getY())] = null;
-            pieceArray[end.getX()][flip(end.getY())] = myCoin;
+                if (pieceArray[myEnd.getX()][flip(myEnd.getY())] != null) {
+                    pieceArray[myEnd.getX()][flip(myEnd.getY())].remove();
+                }
 
-        // you lost your move
-        } else if (lastRound.getMyStatus().getCompare() == Compare.LOSS ||
-                lastRound.getMyStatus().getCompare() == Compare.TIE) {
-            // clear your piece
-            Location start = lastRound.getMyMove().getStart();
-            pieceArray[start.getX()][flip(start.getY())] = null;
-            source.getActor().remove();
+                pieceArray[myEnd.getX()][flip(myEnd.getY())] = myCoin;
+                break;
+            case LOSS:
+                myCoin.remove();
+                break;
+            case TIE:
+                myCoin.remove();
 
-            // clear their piece
-            Location end = lastRound.getMyMove().getEnd();
-            pieceArray[end.getX()][flip(end.getY())].remove();
-            pieceArray[end.getX()][flip(end.getY())] = null;
+                // kill losing coin
+                if (pieceArray[myEnd.getX()][flip(myEnd.getY())] != null) {
+                    pieceArray[myEnd.getX()][flip(myEnd.getY())].remove();
+                }
+                break;
+            case GAMEWIN:
+                // win or tie
+                break;
+            case GAMELOSS:
+                // impossible
+                break;
         }
 
-        // they won their move
-        if (lastRound.getTheirStatus().getCompare() == Compare.WIN) {
-            Location start = lastRound.getTheirMove().getStart();
-            Location end = lastRound.getTheirMove().getEnd();
+        switch (lastRound.getTheirStatus().getCompare()) {
+            case WIN:
+                // place piece on board, remove any piece there if necessary.
+                theirCoin.setPosition((theirEnd.getX()*tileSize) + borderSize, (theirEnd.getY()*tileSize) + borderSize);
 
-            // move winning coin on board
-            Actor myCoin = pieceArray[start.getX()][flip(start.getY())];
-            myCoin.setPosition((end.getX()*tileSize) + borderSize, (end.getY()*tileSize) + borderSize);
+                if (pieceArray[theirEnd.getX()][flip(theirEnd.getY())] != null) {
+                    pieceArray[theirEnd.getX()][flip(theirEnd.getY())].remove();
+                }
 
-            // kill losing coin
-            if (pieceArray[end.getX()][flip(end.getY())] != null) {
-                Actor theirCoin = pieceArray[end.getX()][flip(end.getY())];
+                pieceArray[theirEnd.getX()][flip(theirEnd.getY())] = theirCoin;
+                break;
+            case LOSS:
                 theirCoin.remove();
-            }
+                break;
+            case TIE:
+                theirCoin.remove();
 
-            // register winning coin in array
-            pieceArray[start.getX()][flip(start.getY())] = null;
-            pieceArray[end.getX()][flip(end.getY())] = myCoin;
-
-        // they lost their move
-        } else if (lastRound.getMyStatus().getCompare() == Compare.LOSS ||
-                lastRound.getMyStatus().getCompare() == Compare.TIE) {
-            // clear your piece
-            Location start = lastRound.getTheirMove().getStart();
-            pieceArray[start.getX()][flip(start.getY())] = null;
-            source.getActor().remove();
-
-            // clear their piece
-            Location end = lastRound.getTheirMove().getEnd();
-            pieceArray[end.getX()][flip(end.getY())].remove();
-            pieceArray[end.getX()][flip(end.getY())] = null;
+                // kill losing coin
+                if (pieceArray[theirEnd.getX()][flip(theirEnd.getY())] != null) {
+                    pieceArray[theirEnd.getX()][flip(theirEnd.getY())].remove();
+                }
+                break;
+            case GAMEWIN:
+                // lose or tie
+                break;
+            case GAMELOSS:
+                // impossible
+                break;
         }
     }
 

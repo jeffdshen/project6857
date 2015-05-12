@@ -422,12 +422,14 @@ public class InitScreen implements Screen {
         Fairplay alice;
         Fairplay bob;
         FairplayAlternator fairplayAlternator;
+        FairplayComparer fairplayComparer;
         Socket socket = null;
         if (isServer) {
             // you are bob
-            bob = new Fairplay();
             alice = new Fairplay(serverIp);
+            bob = new Fairplay();
             fairplayAlternator = new FairplayAlternator(alice, bob, false);
+            fairplayComparer = bob;
             Server server = new Server(1234);
             try {
                 server.connect();
@@ -437,9 +439,10 @@ public class InitScreen implements Screen {
             }
         } else {
             // you are alice
-            alice = new Fairplay();
-            bob = new Fairplay(serverIp);
+            alice = new Fairplay(serverIp);
+            bob = new Fairplay();
             fairplayAlternator = new FairplayAlternator(alice, bob, true);
+            fairplayComparer = alice;
             Client client = new Client(serverIp, 1234);
             try {
                 client.connect();
@@ -449,9 +452,14 @@ public class InitScreen implements Screen {
             }
         }
 
-        // create connection and playsrceen
+
+        // UNCOMMENT FOR ALTERING ALICE AND BOB
+//        fairplayComparer = fairplayAlternator;
+
+        // create connection and playscreen
         try {
-            Connection connection = new Connection(socket, initBoard.getBoard(), playerHeight, fairplayAlternator);
+            String id = isServer ? "S" : "C";
+            Connection connection = new Connection(socket, initBoard.getBoard(), playerHeight, fairplayComparer, id);
             Board board = new Board(initBoard.getBoard(), connection);
             connection.setBoard(board);
 

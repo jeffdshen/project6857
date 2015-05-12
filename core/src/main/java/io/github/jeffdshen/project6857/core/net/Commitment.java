@@ -10,26 +10,30 @@ public class Commitment {
 
     // Our nonce is in hex
     public static final int NONCE_LENGTH = NONCE_BYTES_LENGTH * 2;
+    public static final int ID_LENGTH = 1;
 
     private String nonce;
     private String data;
     private String hash;
+    private String id;
 
     private Commitment() {}
 
     /**
-     * Updates the commitment with the secret (nonce + data) and verifies the hash.
+     * Updates the commitment with the secret (nonce + id + data) and verifies the hash.
      * @param secret
      * @return true if the hash matches
      */
     public boolean update(String secret) {
-        if (secret.length() < NONCE_LENGTH) {
+        if (secret.length() < NONCE_LENGTH + ID_LENGTH) {
             return false;
         }
 
-        String data = secret.substring(NONCE_LENGTH);
+        String data = secret.substring(NONCE_LENGTH + ID_LENGTH);
+        String id = secret.substring(NONCE_LENGTH, NONCE_LENGTH + ID_LENGTH);
         String nonce = secret.substring(0, NONCE_LENGTH);
         if (hash.equals(Sha256.hash(secret))) {
+            this.id = id;
             this.data = data;
             this.nonce = nonce;
             return true;
@@ -38,8 +42,12 @@ public class Commitment {
         return false;
     }
 
+    public String getId() {
+        return id;
+    }
+
     public String getSecret() {
-        return nonce + data;
+        return nonce + id + data;
     }
 
     public String getData() {
@@ -54,20 +62,30 @@ public class Commitment {
         return hash;
     }
 
-    public static Commitment makeCommitment(String data) {
-        SecureRandom random = new SecureRandom();
-        Commitment c = new Commitment();
-        c.data = data;
-        byte[] bytes = new byte[NONCE_BYTES_LENGTH];
-        random.nextBytes(bytes);
-        c.nonce = EncodingProtocol.encodeBytes(bytes);
-        c.hash = Sha256.hash(c.nonce + c.data);
-        return c;
-    }
+    public static CommitmentProvider getCommitmentProvider(final String identifier) {
+        if (identifier.length() != ID_LENGTH) {
+            throw new IllegalArgumentException();
+        }
+        return new CommitmentProvider() {
+            @Override
+            public Commitment makeCommitment(String data) {
+                SecureRandom random = new SecureRandom();
+                Commitment c = new Commitment();
+                c.data = data;
+                byte[] bytes = new byte[NONCE_BYTES_LENGTH];
+                random.nextBytes(bytes);
+                c.nonce = EncodingProtocol.encodeBytes(bytes);
+                c.id = identifier;
+                c.hash = Sha256.hash(c.nonce + c.getId() + c.data);
+                return c;
+            }
 
-    public static Commitment getCommitment(String hash) {
-        Commitment c = new Commitment();
-        c.hash = hash;
-        return c;
+            @Override
+            public Commitment getCommitment(String hash) {
+                Commitment c = new Commitment();
+                c.hash = hash;
+                return c;
+            }
+        };
     }
 }

@@ -4,7 +4,7 @@
  */
 program Compare {
     type int = Int<4>; // 4-bit integer
-    type Rank = Int<3>; // only need 3 bits - note that it starts at 0, not 1.
+    type Rank = Int<4>; // only need 4 bits - note that it starts at 0, not 1 - note bits are signed.
     type PieceType = enum { ROCK, PAPER, SCISSORS }; // flag should never be reached
     type CompareResult = enum { WIN, LOSS, TIE };
 
