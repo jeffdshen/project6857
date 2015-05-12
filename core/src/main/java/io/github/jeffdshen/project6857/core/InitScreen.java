@@ -21,9 +21,12 @@ import io.github.jeffdshen.project6857.core.net.*;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by Shruthi on 5/10/2015.
@@ -425,11 +428,6 @@ public class InitScreen implements Screen {
         FairplayComparer fairplayComparer;
         Socket socket = null;
         if (isServer) {
-            // you are bob
-            alice = new Fairplay(serverIp);
-            bob = new Fairplay();
-            fairplayAlternator = new FairplayAlternator(alice, bob, false);
-            fairplayComparer = bob;
             Server server = new Server(1234);
             try {
                 server.connect();
@@ -437,12 +435,15 @@ public class InitScreen implements Screen {
             } catch (IOException e){
                 e.printStackTrace();
             }
+
+            // you are bob
+            InetSocketAddress address = (InetSocketAddress) socket.getRemoteSocketAddress();
+            alice = new Fairplay(address.getHostName());
+            bob = new Fairplay();
+            fairplayAlternator = new FairplayAlternator(alice, bob, false);
+            fairplayComparer = bob;
         } else {
             // you are alice
-            alice = new Fairplay(serverIp);
-            bob = new Fairplay();
-            fairplayAlternator = new FairplayAlternator(alice, bob, true);
-            fairplayComparer = alice;
             Client client = new Client(serverIp, 1234);
             try {
                 client.connect();
@@ -450,11 +451,17 @@ public class InitScreen implements Screen {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
+            InetSocketAddress address = (InetSocketAddress) socket.getRemoteSocketAddress();
+            alice = new Fairplay(address.getHostName());
+            bob = new Fairplay();
+            fairplayAlternator = new FairplayAlternator(alice, bob, true);
+            fairplayComparer = alice;
         }
 
 
         // UNCOMMENT FOR ALTERING ALICE AND BOB
-//        fairplayComparer = fairplayAlternator;
+        fairplayComparer = fairplayAlternator;
 
         // create connection and playscreen
         try {
