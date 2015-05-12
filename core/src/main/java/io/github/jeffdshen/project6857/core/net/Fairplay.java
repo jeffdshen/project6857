@@ -175,6 +175,7 @@ public class Fairplay implements FairplayComparer {
                 // otherwise, check if it's input
                 buffer.append(x);
                 if (input.containsKey(buffer.toString())) {
+                    System.out.println(input.get(buffer.toString()));
                     out.println(input.get(buffer.toString()));
                     buffer.delete(0, buffer.length());
                 }

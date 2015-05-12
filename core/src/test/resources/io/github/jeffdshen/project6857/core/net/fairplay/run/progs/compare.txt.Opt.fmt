@@ -1,7 +1,7 @@
-Bob input integer "input.bob.rank" [ 0 1 2 ]
-Bob input integer "input.bob.piece" [ 3 4 ]
-Alice input integer "input.alice.rank" [ 5 6 7 ]
-Alice input integer "input.alice.piece" [ 8 9 ]
-Alice output integer "output.alice" [ 140 141 ]
-Bob output integer "output.bob" [ 139 142 ]
+Bob input integer "input.bob.rank" [ 0 1 2 3 ]
+Bob input integer "input.bob.piece" [ 4 5 ]
+Alice input integer "input.alice.rank" [ 6 7 8 9 ]
+Alice input integer "input.alice.piece" [ 10 11 ]
+Alice output integer "output.alice" [ 160 161 ]
+Bob output integer "output.bob" [ 159 162 ]
 
