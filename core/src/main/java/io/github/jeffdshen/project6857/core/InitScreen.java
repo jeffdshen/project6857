@@ -425,8 +425,8 @@ public class InitScreen implements Screen {
         Socket socket = null;
         if (isServer) {
             // you are bob
-            bob = new Fairplay();
             alice = new Fairplay(serverIp);
+            bob = new Fairplay();
             fairplayAlternator = new FairplayAlternator(alice, bob, false);
             Server server = new Server(1234);
             try {
@@ -437,8 +437,8 @@ public class InitScreen implements Screen {
             }
         } else {
             // you are alice
-            alice = new Fairplay();
-            bob = new Fairplay(serverIp);
+            alice = new Fairplay(serverIp);
+            bob = new Fairplay();
             fairplayAlternator = new FairplayAlternator(alice, bob, true);
             Client client = new Client(serverIp, 1234);
             try {

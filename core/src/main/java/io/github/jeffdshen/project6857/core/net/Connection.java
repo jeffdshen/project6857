@@ -36,6 +36,8 @@ public class Connection implements Runnable, PieceComparer {
                 socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(),
                 true);
+        fairplay.setReader(in);
+        fairplay.setWriter(out);
         provider = Commitment.getCommitmentProvider(id);
     }
 

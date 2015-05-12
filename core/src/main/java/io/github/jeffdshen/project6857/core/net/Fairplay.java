@@ -25,6 +25,8 @@ public class Fairplay implements FairplayComparer {
     private final String namePrefix;
     private final String outputPrefix;
     private final String inputPrefix;
+    private BufferedReader in;
+    private PrintWriter out;
 
     private static Map<PieceType, Integer> typeToInt() {
         Map<PieceType, Integer> map = new HashMap<>();
@@ -64,6 +66,14 @@ public class Fairplay implements FairplayComparer {
         inputPrefix = "input." + namePrefix + ".";
     }
 
+    public void setReader(BufferedReader in) {
+        this.in = in;
+    }
+
+    public void setWriter(PrintWriter out) {
+        this.out = out;
+    }
+
     public Fairplay(String ip, boolean alice, String dirName, String pathExec, String pathSFDL) {
         this(ip, alice, new File(dirName), pathExec, pathSFDL);
     }
@@ -81,7 +91,7 @@ public class Fairplay implements FairplayComparer {
     }
 
     private static File getDirectory() {
-        return Gdx.files.internal("fairplay/run").file();
+        return Gdx.files.internal("assets/fairplay/run/run_alice").file().getParentFile();
     }
 
     private static String getPathExec(boolean alice) {
@@ -89,7 +99,7 @@ public class Fairplay implements FairplayComparer {
     }
 
     private static String getPathSFDL() {
-        return "progs/comparison.txt";
+        return "progs/compare.txt";
     }
 
     public boolean isAlice() {
@@ -107,7 +117,7 @@ public class Fairplay implements FairplayComparer {
      */
     public Compare compare(PieceType type, Rank rank) throws IOException {
         HashMap<String, String> map = new HashMap<>();
-        map.put(inputPrefix + "type", TYPE_TO_INT.get(type) + "");
+        map.put(inputPrefix + "piece", TYPE_TO_INT.get(type) + "");
         map.put(inputPrefix + "rank", RANK_TO_INT.get(rank) + "");
         return INT_TO_COMPARE.get(compare(map));
     }
@@ -124,9 +134,24 @@ public class Fairplay implements FairplayComparer {
 
         ProcessBuilder builder = alice ? new ProcessBuilder(pathExec, "-r", pathSFDL, randomString, ip)
             : new ProcessBuilder(pathExec, "-r", pathSFDL, randomString, "4");
+        System.out.println(pathExec);
+        System.out.println(pathSFDL);
+        System.out.println(dir.getAbsolutePath());
+        System.out.println(builder);
+//        System.exit(1);
         builder.directory(dir);
         builder.redirectErrorStream(true);
+
+        if (alice) {
+            in.readLine();
+        }
+
         Process process = builder.start();
+
+        if (!alice) {
+            out.println("started");
+        }
+
         try (BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
              BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
              PrintWriter out = new PrintWriter(bw, true)
@@ -134,6 +159,7 @@ public class Fairplay implements FairplayComparer {
             StringBuilder buffer = new StringBuilder();
             for (int c = in.read(); c != -1; c = in.read()) {
                 char x = (char) c;
+                System.out.print(x);
                 // if new line, check if it's output, then discard the line.
                 if (x == '\n' || x == '\r') {
                     String s = buffer.toString();

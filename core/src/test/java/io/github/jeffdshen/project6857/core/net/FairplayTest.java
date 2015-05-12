@@ -2,7 +2,8 @@ package io.github.jeffdshen.project6857.core.net;
 
 import org.testng.annotations.Test;
 
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
 import static junit.framework.Assert.assertEquals;
@@ -18,6 +19,8 @@ public class FairplayTest {
             "./run_bob",
             "progs/test.txt"
         );
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bob.setWriter(new PrintWriter(outputStream));
 
         final HashMap<String, String> bobInputs = new HashMap<>();
         bobInputs.put("input.bob.piece", "0");
@@ -43,6 +46,8 @@ public class FairplayTest {
             "./run_alice",
             "progs/test.txt"
         );
+        InputStream inputStream = new ByteArrayInputStream("started\n".getBytes(StandardCharsets.UTF_8));
+        alice.setReader(new BufferedReader(new InputStreamReader(inputStream)));
 
         final HashMap<String, String> aliceInputs = new HashMap<>();
         aliceInputs.put("input.alice.piece", "0");
