@@ -449,7 +449,7 @@ public class InitScreen implements Screen {
             }
         }
 
-        // create connection and playsceen
+        // create connection and playsrceen
         try {
             Connection connection = new Connection(socket, initBoard.getBoard(), playerHeight, fairplayAlternator);
             Board board = new Board(initBoard.getBoard(), connection);

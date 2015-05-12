@@ -40,7 +40,6 @@ public class PlayScreen implements Screen{
     DragAndDrop dragDrop;
     Stage stage;
     Actor sidebar;
-    Actor[][] tileArray;
     Actor[][] pieceArray;
     TextButton.TextButtonStyle buttonStyle;
     public static Map<DragAndDrop.Source, Piece> sourceMap = new HashMap<>();
@@ -128,7 +127,6 @@ public class PlayScreen implements Screen{
     }
 
     private void tileStage() {
-        tileArray = new Actor [boardWidth][boardHeight];
         Table tileTable = new Table();
         tileTable.setBounds(0, 0, boardWidth * tileSize, boardHeight * tileSize);
         for (int y = 0; y < boardHeight; y++) {
@@ -136,7 +134,6 @@ public class PlayScreen implements Screen{
                 Image tile = new Image(new Texture(Gdx.files.internal("tile.png")));
                 tile.setSize(tileSize, tileSize);
                 tileTable.add(tile);
-                tileArray[x][boardHeight-y-1] = tile;
             }
             tileTable.row();
         }
@@ -202,6 +199,7 @@ public class PlayScreen implements Screen{
                 this.getActor().setVisible(true);
                 //synchronized (targetLock) {
                     for (DragAndDrop.Target oldTarget : validTargets) {
+                        oldTarget.getActor().remove();
                         dragDrop.removeTarget(oldTarget);
                     }
                 //}
@@ -211,8 +209,10 @@ public class PlayScreen implements Screen{
                 for (final Direction dir: new Direction[] {Direction.FORWARD,Direction.RIGHT, Direction.BACKWARD, Direction.LEFT}){
                     Location possibleLoc = startLoc.add(dir);
                     if (board.inBoard(possibleLoc)) {
-                        Actor possibleTile = tileArray[possibleLoc.getX()][possibleLoc.getY()];
-                        DragAndDrop.Target target = new DragAndDrop.Target(possibleTile) {
+                        Actor tileOverlay = new Actor();
+                        tileOverlay.setBounds(possibleLoc.getX()*tileSize, possibleLoc.getY()*tileSize, tileSize, tileSize);
+                        stage.addActor(tileOverlay);
+                        DragAndDrop.Target target = new DragAndDrop.Target(tileOverlay) {
                             Direction toHere = dir;
                             Location start = startLoc;
 
