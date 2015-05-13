@@ -230,7 +230,9 @@ public class PlayScreen implements Screen{
                                     int xPos = (int) currentTile.getX();
                                     int yPos = (int) currentTile.getY();
 
-                                    board.makeMyMove(startLoc, dir);
+                                    if (!board.makeMyMove(startLoc, dir)) {
+                                        return;
+                                    }
                                     while(Objects.equals(board.getLastRound(), lastRound)) {
                                         // just keep swimming
                                         // possibly some sort of loading indicator
