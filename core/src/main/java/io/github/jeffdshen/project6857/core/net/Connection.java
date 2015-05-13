@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Created by chenp on 5/5/2015.
@@ -82,7 +83,7 @@ public class Connection implements Runnable, PieceComparer {
         for (int i = 0; i < initBoardVerifier.length; i++) {
             verifyCondition(initBoardVerifier[i].length == theirInitBoard[i].length);
             for (int j = 0; j < initBoardVerifier[i].length; j++) {
-                verifyCondition(initBoardVerifier[i][j] == theirInitBoard[i][j]);
+                verifyCondition(Objects.equals(initBoardVerifier[i][j], theirInitBoard[i][j]));
             }
         }
     }
@@ -91,12 +92,12 @@ public class Connection implements Runnable, PieceComparer {
         Piece[][] combinedBoard = new Piece[initBoard.length][initBoard[0].length];
         for (int i = 0; i < initBoard.length; i++) {
             for (int j = 0; j < initBoard[i].length; j++) {
-                if (initBoard[j][i] != null && initBoard[j][i].getIsMine()) {
-                    combinedBoard[j][i] = initBoard[j][i];
+                if (initBoard[i][j] != null && initBoard[i][j].getIsMine()) {
+                    combinedBoard[i][j] = initBoard[i][j];
                 }
                 Location loc = board.getRotatedLocation(new Location(j, i));
-                if (theirInitBoard[j][i] != null && theirInitBoard[j][i].getIsMine()) {
-                    Piece theirs = theirInitBoard[j][i];
+                if (theirInitBoard[i][j]!= null && theirInitBoard[i][j].getIsMine()) {
+                    Piece theirs = theirInitBoard[i][j];
                     combinedBoard[loc.getY()][loc.getX()] = theirs.flipSides();
                 }
             }

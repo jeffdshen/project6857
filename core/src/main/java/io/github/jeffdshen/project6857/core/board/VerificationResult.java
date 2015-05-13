@@ -13,7 +13,7 @@ public class VerificationResult {
     }
 
     public boolean isVerified() {
-        return e != null;
+        return e == null;
     }
 
     public Exception getException() {

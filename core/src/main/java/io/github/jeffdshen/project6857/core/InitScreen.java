@@ -59,9 +59,9 @@ public class InitScreen implements Screen {
     );
     private static final Map<PieceType,Color> typeMap = Collections.unmodifiableMap(
             new HashMap<PieceType,Color>() {{
-                put(PieceType.ROCK, new Color(0.515f, 0.691f, 1f, 1f));
-                put(PieceType.PAPER, new Color(0.578f, 0.906f, 0.441f, 1f));
-                put(PieceType.SCISSORS, new Color(0.906f, 0.355f, 0.26f, 1f));
+                put(PieceType.ROCK, new Color(0.515f, 0.691f, 1f, 1f)); //blue
+                put(PieceType.PAPER, new Color(0.578f, 0.906f, 0.441f, 1f)); //green
+                put(PieceType.SCISSORS, new Color(0.906f, 0.355f, 0.26f, 1f)); //red
                 put(PieceType.FLAG, new Color(0.969f, 0.953f, 1f, 1f));
                 put(PieceType.UNKNOWN, new Color(0.027f, 0.223f, 0.398f, 1f));
             }}

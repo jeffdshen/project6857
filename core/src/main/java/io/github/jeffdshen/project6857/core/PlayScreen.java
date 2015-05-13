@@ -7,13 +7,14 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.DragAndDrop;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import io.github.jeffdshen.project6857.core.board.*;
 import io.github.jeffdshen.project6857.core.net.EncodingProtocol;
@@ -43,7 +44,7 @@ public class PlayScreen implements Screen{
     Actor[][] pieceArray;
     TextButton.TextButtonStyle buttonStyle;
     public static Map<DragAndDrop.Source, Piece> sourceMap = new HashMap<>();
-    private Object targetLock = new Object();
+    final Skin uiSkin = new Skin(Gdx.files.internal("skin/uiskin.json"));
 
     Board board;
     Round lastRound;
@@ -107,15 +108,11 @@ public class PlayScreen implements Screen{
         pixmap.setColor(new Color(0.015f, 0.217f, 0.225f, 1f)); //4, 55, 58
         pixmap.fill();
         Image topbar = new Image(new Texture(pixmap));
-        topbar.setBounds(0, boardHeight * tileSize, stageWidth, stageHeight - (boardHeight*tileSize));
+        topbar.setBounds(0, boardHeight * tileSize, stageWidth, stageHeight - (boardHeight * tileSize));
         pixmap.dispose();
         stage.addActor(topbar);
 
-        // fill topbar with text and buttons
-        //createButtons();
-
         placePieces();
-
     }
 
     @Override
@@ -239,8 +236,8 @@ public class PlayScreen implements Screen{
                                         VerificationResult verificationResult = board.getVerificationResult();
                                         if (verificationResult != null) {
                                             System.out.println(verificationResult.getMessage());
-                                            verificationResult.getException().printStackTrace();
-                                            System.exit(1);
+                                            if (verificationResult.isVerified()) verificationResult.getException().printStackTrace();
+                                            showMessageTable(verificationResult.getMessage(), false);
                                         }
                                     }
                                     updateBoard(source);
@@ -299,7 +296,13 @@ public class PlayScreen implements Screen{
                 }
                 break;
             case GAMEWIN:
-                // win or tie
+                if (lastRound.getTheirStatus().getCompare() == Compare.GAMEWIN){
+                    // this means you tied with them
+                    showMessageTable("game over\n you tied", true);
+                } else {
+                    // you won yay
+                    showMessageTable("game over\n you won", true);
+                }
                 break;
             case GAMELOSS:
                 // impossible
@@ -329,12 +332,66 @@ public class PlayScreen implements Screen{
                 }
                 break;
             case GAMEWIN:
-                // lose or tie
+                if (lastRound.getMyStatus().getCompare() == Compare.GAMEWIN){
+                    // this means you tied with them
+                    showMessageTable("game over\n you tied", true);
+                } else {
+                    // you lost :(
+                    showMessageTable("game over\n you lost", true);
+                }
                 break;
             case GAMELOSS:
                 // impossible
                 break;
         }
+    }
+
+    private void showMessageTable(String message, boolean mustVerify) {
+        // create pixmap and background
+        Pixmap pixmap = new Pixmap(stageWidth, stageHeight, Pixmap.Format.RGBA8888);
+        pixmap.setColor(new Color(0.25f, 0.25f, 0.25f, 0.5f)); //64 64 64 translucent
+        pixmap.fill();
+        pixmap.setColor(new Color(0.015f, 0.217f, 0.225f, 1f)); //4, 55, 58
+        pixmap.fillRectangle(stageWidth * 3 / 8, stageHeight * 3 / 8, stageWidth / 4, stageHeight / 4);
+        TextureRegionDrawable background = new TextureRegionDrawable(new TextureRegion(
+                new Texture(pixmap)));
+
+        // create exit button (right now style is uiskin)
+        TextButton exitButton = new TextButton("Exit", uiSkin);
+        exitButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                System.exit(1);
+            }
+        });
+
+        // create table
+        Table messageTable = new Table();
+        messageTable.setBackground(background);
+        messageTable.setBounds(0, 0, stageWidth, stageHeight);
+        Label messageLabel = new Label(message, uiSkin);
+        messageTable.add(messageLabel);
+        Cell labelCell = messageTable.getCell(messageLabel);
+        messageTable.row();
+        messageTable.add(exitButton).pad(20, 10, 20, 10);
+
+        stage.addActor(messageTable);
+
+        if (mustVerify) {
+            messageLabel = new Label(message + "\n Getting Verification...", uiSkin);
+            labelCell.setActor(messageLabel);
+            try {
+                VerificationResult verificationResult = board.awaitVerificationResult();
+                messageLabel = new Label(message + "\n Verification result: " + verificationResult.getMessage(), uiSkin);
+                labelCell.setActor(messageLabel);
+
+                System.out.println(verificationResult.getMessage());
+                if (!verificationResult.isVerified()) verificationResult.getException().printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     private int flip(int y) {
