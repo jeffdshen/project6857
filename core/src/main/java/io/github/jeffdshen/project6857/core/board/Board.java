@@ -1,5 +1,6 @@
 package io.github.jeffdshen.project6857.core.board;
 
+import io.github.jeffdshen.project6857.core.net.Fairplay;
 import io.github.jeffdshen.project6857.core.net.PieceComparer;
 
 import java.io.IOException;
@@ -186,40 +187,43 @@ public class Board {
                 return new Result(Compare.GAMELOSS, piece1, null);
             } else if (piece2.getType() == PieceType.FLAG){
                 return new Result(Compare.GAMEWIN, null, piece2);
-            } else if (piece1.getType() == piece2.getType()){
-                if (piece1.getRank() == piece2.getRank()){
-                    return new Result(Compare.TIE, piece1, piece2);
-                } else if (piece1.getRank() == Rank.ONE ||
-                        (piece1.getRank() == Rank.TWO && piece2.getRank() != Rank.ONE) ||
-                        (piece1.getRank() == Rank.THREE && piece2.getRank() != Rank.ONE && piece2.getRank() != Rank.TWO) ||
-                        (piece1.getRank() == Rank.FOUR && (piece2.getRank() == Rank.FIVE || piece2.getRank() == Rank.BOMB)) ||
-                        (piece1.getRank() == Rank.FIVE && piece2.getRank() == Rank.BOMB)){
+            }
+
+            int type = 1;
+            if ((piece1.getType() == PieceType.ROCK && piece2.getType() == PieceType.PAPER) ||
+                (piece1.getType() == PieceType.PAPER && piece2.getType() == PieceType.SCISSORS) ||
+                (piece1.getType() == PieceType.SCISSORS && piece2.getType() == PieceType.ROCK)) {
+                type = -1;
+            } else if (piece1.getType() == piece2.getType()) {
+                type = 0;
+            }
+
+            if (piece1.getRank() == Rank.BOMB) {
+                if (type == -1) {
                     return new Result(Compare.LOSS, piece1, null);
-                }
-                return new Result(Compare.WIN, piece1, piece2);
-            } else if ((piece1.getType() == PieceType.ROCK && piece2.getType() == PieceType.PAPER) ||
-                    (piece1.getType() == PieceType.PAPER && piece2.getType() == PieceType.SCISSORS) ||
-                    (piece1.getType() == PieceType.SCISSORS && piece2.getType() == PieceType.ROCK)){
-                if ((piece1.getRank() == Rank.THREE && piece2.getRank() == Rank.ONE) ||
-                        (piece1.getRank() == Rank.FOUR && piece2.getRank() == Rank.TWO) ||
-                        (piece1.getRank() == Rank.FIVE && piece2.getRank() == Rank.THREE)) {
-                    return new Result(Compare.TIE, piece1, piece2);
-                } else if (piece1.getRank() == Rank.ONE || piece1.getRank() == Rank.TWO || piece1.getRank() == Rank.THREE ||
-                        (piece1.getRank() == Rank.FOUR && piece2.getRank() != Rank.ONE) ||
-                        (piece1.getRank() == Rank.FIVE && piece2.getRank() != Rank.ONE && piece2.getRank() != Rank.TWO)){
-                    return new Result(Compare.LOSS, piece1, null);
-                }
-                return new Result(Compare.WIN, null, piece2);
-            } else {
-                if ((piece2.getRank() == Rank.THREE && piece1.getRank() == Rank.ONE) ||
-                        (piece2.getRank() == Rank.FOUR && piece1.getRank() == Rank.TWO) ||
-                        (piece2.getRank() == Rank.FIVE && piece1.getRank() == Rank.THREE)) {
-                    return new Result(Compare.TIE, piece1, piece2);
-                } else if (piece2.getRank() == Rank.ONE || piece2.getRank() == Rank.TWO || piece2.getRank() == Rank.THREE ||
-                        (piece2.getRank() == Rank.FOUR && piece1.getRank() != Rank.ONE) ||
-                        (piece2.getRank() == Rank.FIVE && piece1.getRank() != Rank.ONE && piece1.getRank() != Rank.TWO)){
+                } else {
                     return new Result(Compare.WIN, null, piece2);
                 }
+            }
+
+
+            if (piece2.getRank() == Rank.BOMB) {
+                if (type == 1) {
+                    return new Result(Compare.WIN, null, piece2);
+                } else {
+                    return new Result(Compare.LOSS, piece1, null);
+                }
+            }
+
+            int rank1 = Fairplay.RANK_TO_INT.get(piece1.getRank());
+            int rank2 = Fairplay.RANK_TO_INT.get(piece2.getRank());
+
+            rank1 += type * 2;
+            if (rank1 > rank2) {
+                return new Result(Compare.WIN, null, piece2);
+            } else if (rank1 == rank2) {
+                return new Result(Compare.TIE, piece1, piece2);
+            } else {
                 return new Result(Compare.LOSS, piece1, null);
             }
         }
