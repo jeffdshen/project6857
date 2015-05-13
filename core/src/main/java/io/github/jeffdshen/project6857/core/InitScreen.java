@@ -461,7 +461,7 @@ public class InitScreen implements Screen {
 
 
         // UNCOMMENT FOR ALTERING ALICE AND BOB
-        fairplayComparer = fairplayAlternator;
+//        fairplayComparer = fairplayAlternator;
 
         // create connection and playscreen
         try {
