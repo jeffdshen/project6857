@@ -101,7 +101,7 @@ public class Connection implements Runnable, PieceComparer {
                 }
             }
         }
-        Board verifier = new Board(combinedBoard, null);
+        Board verifier = new Board(combinedBoard, null, true);
 
         List<Round> rounds = board.getRounds();
         for (Round round : rounds) {

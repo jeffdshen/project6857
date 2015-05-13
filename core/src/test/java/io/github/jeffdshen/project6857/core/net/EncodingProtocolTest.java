@@ -15,7 +15,7 @@ public class EncodingProtocolTest {
         initBoard.setPiece(0, 3, new Piece(PieceType.PAPER, Rank.FIVE, true));
         initBoard.setPiece(5, 3, new Piece(PieceType.PAPER, Rank.FOUR, true));
         initBoard.setPiece(4, 3, new Piece(PieceType.PAPER, Rank.FOUR, true));
-        Board board = new Board(initBoard.getBoard(), null);
+        Board board = new Board(initBoard.getBoard(), null, true);
         Piece[][] pieces = board.getBoard();
         String s = EncodingProtocol.encodeBoard(pieces);
         Piece[][] decoded = EncodingProtocol.decodeBoard(s);

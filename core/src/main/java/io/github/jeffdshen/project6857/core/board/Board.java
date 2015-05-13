@@ -24,8 +24,11 @@ public class Board {
     private final int width;
     private final int height;
 
+    // used to break symmetry
+    private boolean isServer;
 
-    public Board(Piece[][] board, PieceComparer comparer){
+    public Board(Piece[][] board, PieceComparer comparer, boolean isServer){
+        this.isServer = isServer;
         // copy since we end up modifying board
         this.board = new Piece[board.length][];
         for (int i = 0; i < board.length; i++) {
@@ -99,18 +102,34 @@ public class Board {
                     myStatus = result;
                     theirStatus = result.opposite();
                 } else {
-                    if (getPiece(myMove.getEnd()) == null || myMove.getEnd().equals(theirMove.getStart())){
-                        // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
-                        myStatus = new Result(Compare.WIN, null, null);
-                    } else {
-                        myStatus = compare(myMove.getStart(), myMove.getEnd());
-                    }
+                    if (isServer) {
+                        if (getPiece(myMove.getEnd()) == null || myMove.getEnd().equals(theirMove.getStart())){
+                            // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
+                            myStatus = new Result(Compare.WIN, null, null);
+                        } else {
+                            myStatus = compare(myMove.getStart(), myMove.getEnd());
+                        }
 
-                    if (getPiece(theirMove.getEnd()) == null || theirMove.getEnd().equals(myMove.getStart())){
-                        // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
-                        theirStatus = new Result(Compare.WIN, null, null);
+                        if (getPiece(theirMove.getEnd()) == null || theirMove.getEnd().equals(myMove.getStart())){
+                            // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
+                            theirStatus = new Result(Compare.WIN, null, null);
+                        } else {
+                            theirStatus = compare(theirMove.getEnd(), theirMove.getStart()).opposite();
+                        }
                     } else {
-                        theirStatus = compare(theirMove.getEnd(), theirMove.getStart()).opposite();
+                        if (getPiece(theirMove.getEnd()) == null || theirMove.getEnd().equals(myMove.getStart())){
+                            // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
+                            theirStatus = new Result(Compare.WIN, null, null);
+                        } else {
+                            theirStatus = compare(theirMove.getEnd(), theirMove.getStart()).opposite();
+                        }
+
+                        if (getPiece(myMove.getEnd()) == null || myMove.getEnd().equals(theirMove.getStart())){
+                            // Checks if moving onto an empty piece (piece that the other player just vacated is empty)
+                            myStatus = new Result(Compare.WIN, null, null);
+                        } else {
+                            myStatus = compare(myMove.getStart(), myMove.getEnd());
+                        }
                     }
                 }
 

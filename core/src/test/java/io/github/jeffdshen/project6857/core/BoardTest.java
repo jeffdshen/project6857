@@ -13,7 +13,7 @@ public class BoardTest {
     public void initializeBoardTest(){
         InitBoard initBoard = new InitBoard(10, 10, 4, InitBoard.getDefaultPieces());
         initBoard.setPiece(0, 3, new Piece(PieceType.PAPER, Rank.FIVE, true));
-        Board board = new Board(initBoard.getBoard(), null);
+        Board board = new Board(initBoard.getBoard(), null, true);
         assertEquals(board.getPiece(0, 3), new Piece(PieceType.PAPER, Rank.FIVE, true));
     }
 
@@ -23,7 +23,7 @@ public class BoardTest {
         initBoard.setPiece(0, 3, new Piece(PieceType.PAPER, Rank.FIVE, true));
         initBoard.setPiece(5, 3, new Piece(PieceType.PAPER, Rank.FOUR, true));
         initBoard.setPiece(4, 3, new Piece(PieceType.PAPER, Rank.FOUR, true));
-        Board board = new Board(initBoard.getBoard(), null);
+        Board board = new Board(initBoard.getBoard(), null, true);
 
         // Moves correctly
         assertTrue(board.makeMyMove(0, 3, Direction.FORWARD));
